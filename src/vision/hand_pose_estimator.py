@@ -5,7 +5,7 @@
 import time
 import os
 import sys
-sys.path.append(r'C:\Users\wcm\Desktop\ICAN\RememberDog\assets\handpose_x')
+sys.path.append("assets/handpose_x")
 import argparse
 import torch
 import torch.nn as nn
