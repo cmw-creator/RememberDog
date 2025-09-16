@@ -21,19 +21,15 @@ class FaceDetector:
         self.predictor = dlib.shape_predictor("assets/face_detector/shape_predictor_68_face_landmarks.dat")
         self.face_recognizer = dlib.face_recognition_model_v1("assets/face_detector/dlib_face_recognition_resnet_model_v1.dat")
         
-        # 已知人脸数据库 {name: descriptor}
+        # 已知人脸数据库
         self.known_faces = self.load_known_faces("assets/face_detector/known_faces")  # 存储人物照片的目录
         
         # ROS话题定义
         #self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.image_callback)
         #self.result_pub = rospy.Publisher("/face_recognition/result", String, queue_size=10)
-        # 先用电脑摄像头
-        #self.camera = cv2.VideoCapture(0)  # 使用默认摄像头（广角相机）
-        #self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 800)  # 设置分辨率
-        #self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
-        self.camera_manager = camera_manager
+        self.camera_manager = camera_manager #使用的摄像头
         # 性能优化
-        self.frame_skip = 1  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 2  # 如果为2，则每3帧处理1帧
         self.frame_count = 0
 
     def load_known_faces(self, dir_path):
@@ -67,7 +63,6 @@ class FaceDetector:
             faces = self.detector(cv_image_rgb, 0)  # 不进行上采样（速度优先）
             
             for face in faces:
-                # print("开始识别")
                 # 关键点检测与特征提取
                 shape = self.predictor(cv_image_rgb, face)
                 descriptor = np.array(self.face_recognizer.compute_face_descriptor(cv_image_rgb, shape))
@@ -87,9 +82,6 @@ class FaceDetector:
                 print(result_msg)
                 #self.result_pub.publish(result_msg)
                 
-                # 语音反馈（需集成TTS）
-                #if match_name != "unknown":
-                #    os.system(f"espeak -v zh '{match_name}来看您了！' --stdout | aplay")  # Linux语音合成
                 
                 # 在图像上绘制结果（调试用）
                 x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
@@ -97,18 +89,22 @@ class FaceDetector:
                 cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             
             # 显示实时画面（可选）
-            cv2.imshow("Face Recognition", cv_image)
-            cv2.waitKey(1)
+            #cv2.imshow("Face Recognition", cv_image)
+            #cv2.waitKey(1)
             
         except Exception as e:
             #rospy.logerr(f"处理图像失败: {str(e)}")
             print(f"处理图像失败: {str(e)}")
     def run_detection(self):
+        print("启动人脸识别")
         while True:
             self.run()
 
 if __name__ == '__main__':
-    #test
-    node = FaceDetector()
-    node.run_detector()
-    #rospy.spin()
+    print("人脸识别测试")
+    from camera_manager  import  CameraManager
+    cam_manager=CameraManager()
+    cam_manager.start()
+    
+    face_detector=FaceDetector(cam_manager)
+    face_detector.run_detection()

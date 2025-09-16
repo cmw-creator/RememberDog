@@ -2,7 +2,7 @@
 # date:2021-04-5
 # Author: Eric.Lee
 # function: Real-time Hand Pose Inference from Camera
-
+import time
 import os
 import sys
 sys.path.append(r'C:\Users\wcm\Desktop\ICAN\RememberDog\assets\handpose_x')
@@ -75,21 +75,14 @@ class HandPoseEstimator:
         else:
             print(f"Warning: Model path {self.model_path} does not exist")
 
-    def run_estimation(self, camera_id=0, vis=True):
+    def run_estimation(self):
         # 初始化摄像头
-        cap = cv2.VideoCapture(camera_id)
-        if not cap.isOpened():
-            print("Error: Cannot open camera")
-            return False
-            
-        print("Press 'q' to quit, 's' to save current frame")
-
+        print("启动手势识别")
         with torch.no_grad():
             frame_count = 0
             while True:
                 frame = self.camera_manager.get_frame()
 
-                    
                 frame_count += 1
                 img = frame
                 img_width = img.shape[1]
@@ -131,52 +124,37 @@ class HandPoseEstimator:
                     cv2.circle(img, (int(x), int(y)), 3, (255, 50, 60), -1)
                     cv2.circle(img, (int(x), int(y)), 1, (255, 150, 180), -1)
 
-                # 显示FPS
-                fps = cap.get(cv2.CAP_PROP_FPS)
-                cv2.putText(img, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-                if vis:
-                    cv2.imshow('Hand Pose Estimation', img)
+                #cv2.imshow('Hand Pose Estimation', img)
                     
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):
-                    break
-                elif key == ord('s'):
+                #key = cv2.waitKey(1) & 0xFF
+                #if key == ord('q'):
+                #    break
+                #elif key == ord('s'):
                     # 保存当前帧
-                    cv2.imwrite(f"saved_frame_{frame_count}.jpg", img)
-                    print(f"Frame saved as saved_frame_{frame_count}.jpg")
+                    #cv2.imwrite(f"saved_frame_{frame_count}.jpg", img)
+                    #print(f"Frame saved as saved_frame_{frame_count}.jpg")
 
         cap.release()
         cv2.destroyAllWindows()
         print('Real-time hand pose estimation completed')
         return True
 
-# 保留原有命令行接口
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Project Hand Pose Inference')
-    parser.add_argument('--model_path', type=str, default='./weights/ReXNetV1-size-256-wingloss102-0.122.pth',
-                        help='model_path')
-    parser.add_argument('--model', type=str, default='ReXNetV1',
-                        help='model : resnet_34,resnet_50,resnet_101,squeezenet1_0,squeezenet1_1,shufflenetv2,shufflenet,mobilenetv2,shufflenet_v2_x1_5,shufflenet_v2_x1_0,shufflenet_v2_x2_0,ReXNetV1')
-    parser.add_argument('--num_classes', type=int, default=42,
-                        help='num_classes')
-    parser.add_argument('--GPUS', type=str, default='0',
-                        help='GPUS')
-    parser.add_argument('--img_size', type=tuple, default=(256, 256),
-                        help='img_size')
-    parser.add_argument('--camera_id', type=int, default=0,
-                        help='Camera ID (usually 0 for built-in camera)')
-    parser.add_argument('--vis', type=bool, default=True,
-                        help='vis')
 
-    ops = parser.parse_args()
-    
-    estimator = HandPoseEstimator(
-        model_path=ops.model_path,
-        model=ops.model,
-        num_classes=ops.num_classes,
-        GPUS=ops.GPUS,
-        img_size=ops.img_size
+
+if __name__ == '__main__':
+    print("手势识别测试")
+    from camera_manager  import  CameraManager
+    cam_manager=CameraManager()
+    cam_manager.start()
+    time.sleep(2)#等待摄像头启动
+    hand_estimator = HandPoseEstimator(
+        cam_manager,
+#        model_path="./assets/handpose_x/weights/ReXNetV1-size-256-wingloss102-0.122.pth", #模型更大
+#        model='ReXNetV1',
+        model_path="./assets/handpose_x/weights/squeezenet1_1-size-256-loss-0.0732.pth",   #轻量模型
+        model='squeezenet1_1',
+        num_classes=42,
+        GPUS='0',
+        img_size=(256, 256)
     )
-    
-    estimator.run_estimation(camera_id=ops.camera_id, vis=ops.vis)
+    hand_estimator.run_estimation()

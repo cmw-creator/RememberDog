@@ -24,6 +24,7 @@ class CameraManager:
 
     def start(self):
         """启动摄像头捕获线程"""
+        print("启动摄像头")
         if self.running or not self.camera.isOpened():
             return False
         
@@ -37,6 +38,8 @@ class CameraManager:
         """内部方法：持续捕获帧"""
         while self.running:
             ret, frame = self.camera.read()
+            cv2.imshow('Camera:', frame)
+            cv2.waitKey(1)
             if ret:
                 with self.frame_lock:
                     self.current_frame = frame.copy()
@@ -60,3 +63,10 @@ class CameraManager:
 
     def __del__(self):
         self.stop()
+
+if __name__ == "__main__":
+    print("摄像头测试")
+    camera_manager=CameraManager()
+    camera_manager.start()
+    while True:
+        pass

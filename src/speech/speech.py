@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+#目前功能不正常，windows和ubuntu部分模块不通用
+
 #import rospy
 import threading
 import numpy as np

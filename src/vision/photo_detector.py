@@ -12,7 +12,7 @@ class PhotoDetector:
         #场景匹配器初始化
         self.reference_folder = "assets/photo_detector"
 
-        self.camera_manager = camera_manager
+        self.camera_manager = camera_manager #摄像头
         # 特征检测器和匹配器
         self.sift = cv2.SIFT_create()
         self.flann = self._create_flann_matcher()
@@ -156,6 +156,7 @@ class PhotoDetector:
     
     def run(self):
         """主循环：实时匹配场景"""
+        print("启动图片识别")
         self.running = True
         
         while self.running:
@@ -166,32 +167,26 @@ class PhotoDetector:
             
             # 在图像上显示结果
             if match_result:
-                match_text = f"Matched: {match_result['name']} ({match_result['match_count']} points)"
-                cv2.putText(frame, match_text, (20, 50), 
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                match_text = f"匹配到: {match_result['name']} ({match_result['match_count']} points)"
+                print(match_text)
                 
                 # 显示匹配点图像
-                if debug_img is not None:
-                    cv2.imshow('Good Matches', debug_img)
+                #if debug_img is not None:
+                #    cv2.imshow('Good Matches', debug_img)
             else:
-                cv2.putText(frame, "No match found", (20, 50), 
-                          cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                
                 # 关闭可能存在的匹配点窗口
                 if cv2.getWindowProperty('Good Matches', cv2.WND_PROP_VISIBLE) >= 1:
                     cv2.destroyWindow('Good Matches')
             
             # 显示摄像头画面
-            cv2.imshow('Camera Feed', frame)
+            #cv2.imshow('Camera Feed', frame)
+            cv2.waitKey(1)
             
-
-
 if __name__ == '__main__':
-    try:
-        # 创建场景匹配器
-        matcher = PhotoDetector(reference_folder)
-        
-        # 启动匹配
-        matcher.run()
-    except Exception as e:
-        print(f"错误: {e}")
+    print("图片识别测试")
+    from camera_manager  import  CameraManager
+    cam_manager=CameraManager()
+    cam_manager.start()
+    
+    photo_detector=PhotoDetector(cam_manager)
+    photo_detector.run()

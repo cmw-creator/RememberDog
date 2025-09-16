@@ -16,10 +16,7 @@ class QRCodeDetector:
         #rospy.init_node('qr_barcode_detector', anonymous=True)
         
         # 硬件配置
-        #self.camera = cv2.VideoCapture(0)  # 使用默认摄像头（广角相机）
-        #self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 800)  # 设置分辨率
-        #self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
-        self.camera_manager = camera_manager
+        self.camera_manager = camera_manager #摄像头
         # 语音引擎初始化
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)  # 语速调节
@@ -71,7 +68,7 @@ class QRCodeDetector:
 
     def run_detection(self):
         """主循环：实时识别并处理结果"""
-        #while not rospy.is_shutdown() and self.camera.isOpened():
+        print("启动二维码识别")
         while True:
             frame = self.camera_manager.get_frame()
             
@@ -97,7 +94,7 @@ class QRCodeDetector:
                     self.speak("识别到老照片，正在加载回忆...")
             
             # 显示实时画面（调试用）
-            cv2.imshow('QR/Barcode Detection', frame)
+            #cv2.imshow('QR/Barcode Detection', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             
@@ -107,4 +104,10 @@ class QRCodeDetector:
 
 
 if __name__ == '__main__':
-    pass
+    print("二维码识别测试")
+    from camera_manager  import  CameraManager
+    cam_manager=CameraManager()
+    cam_manager.start()
+    
+    qr_code_detector=QRCodeDetector(cam_manager)
+    qr_code_detector.run_detection()
