@@ -3,6 +3,8 @@ from vision.qr_code_detector  import  QRCodeDetector
 from vision.face_detector  import  FaceDetector
 from vision.photo_detector  import  PhotoDetector
 from vision.hand_pose_estimator import HandPoseEstimator
+from speech.voice_assistant import VoiceAssistant
+from memory.memory_manager import MemoryManager  # 新增
 import threading
 
 def main():
@@ -25,6 +27,10 @@ def main():
         GPUS='0',
         img_size=(256, 256)
     )
+    # 创建记忆管理器
+    memory_manager = MemoryManager()
+    voice_assistant = VoiceAssistant(memory_manager)
+    
 
 
     # 为每个检测器创建单独的线程
@@ -38,6 +44,8 @@ def main():
     face_thread.start()
     photo_thread.start()
     hand_thread.start()
+    memory_manager.start()#内部创造线程了
+    voice_assistant.start()#内部创造线程了
    
 if __name__ == '__main__':
     main()

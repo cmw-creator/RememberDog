@@ -1,0 +1,14 @@
+{
+  "reminders": [
+    {
+      "time": "08:00",
+      "event": "吃降压药",
+      "completed": false
+    },
+    {
+      "time": "12:00",
+      "event": "吃维生素D",
+      "completed": false
+    }
+  ]
+}
