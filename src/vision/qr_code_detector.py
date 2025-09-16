@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import os
 from datetime import datetime
+import time
 from pyzbar.pyzbar import decode
 from PIL import Image
 import pyttsx3  # 离线TTS引擎
@@ -12,7 +13,7 @@ import threading
 
 class QRCodeDetector:
     def __init__(self, camera_manager):
-        # 初始化ROS节点
+        # 初始化ROS节点，现在暂时不用ros
         #rospy.init_node('qr_barcode_detector', anonymous=True)
         
         # 硬件配置
@@ -21,7 +22,7 @@ class QRCodeDetector:
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)  # 语速调节
         
-        # 存储识别的编码数据（药瓶二维码->语音映射）
+        # 存储识别的编码数据（药瓶二维码->语音映射），现在先写在这，以后读取文件获取
         self.medical_db = {
             "med_12345": "降压药，每日早饭后服用1粒",
             "med_67890": "维生素D，每日中饭后服用2粒"
@@ -69,9 +70,11 @@ class QRCodeDetector:
     def run_detection(self):
         """主循环：实时识别并处理结果"""
         print("启动二维码识别")
+        frame_count=0
         while True:
             frame = self.camera_manager.get_frame()
-            
+            frame_count+=1
+
             # 识别二维码/条形码
             decoded_objects = self.decode_codes(frame)
             
@@ -92,11 +95,14 @@ class QRCodeDetector:
                     self.handle_medical_qr(data)
                 elif data.startswith("photo_"):  # 照片条码（示例）
                     self.speak("识别到老照片，正在加载回忆...")
+
+                time.sleep(1)#防止一直识别成功
             
             # 显示实时画面（调试用）
             #cv2.imshow('QR/Barcode Detection', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+            time.sleep(0.1)#减少识别频次
             
         # 释放资源
         self.camera.release()

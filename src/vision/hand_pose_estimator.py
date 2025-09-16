@@ -133,6 +133,7 @@ class HandPoseEstimator:
                     # 保存当前帧
                     #cv2.imwrite(f"saved_frame_{frame_count}.jpg", img)
                     #print(f"Frame saved as saved_frame_{frame_count}.jpg")
+                time.sleep(0.1)#减少识别频次
 
         cap.release()
         cv2.destroyAllWindows()

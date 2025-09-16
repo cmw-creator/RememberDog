@@ -173,11 +173,13 @@ class PhotoDetector:
                 # 显示匹配点图像
                 #if debug_img is not None:
                 #    cv2.imshow('Good Matches', debug_img)
+                time.sleep(1)#防止一直识别成功
             else:
                 # 关闭可能存在的匹配点窗口
                 if cv2.getWindowProperty('Good Matches', cv2.WND_PROP_VISIBLE) >= 1:
                     cv2.destroyWindow('Good Matches')
             
+            time.sleep(0.1)#减少识别频次
             # 显示摄像头画面
             #cv2.imshow('Camera Feed', frame)
             cv2.waitKey(1)

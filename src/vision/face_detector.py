@@ -5,6 +5,7 @@ import cv2
 import dlib
 import numpy as np
 import os
+import time
 #from std_msgs.msg import String
 #from sensor_msgs.msg import Image
 #from cv_bridge import CvBridge
@@ -56,7 +57,7 @@ class FaceDetector:
             # 转换ROS图像消息为OpenCV格式
             #cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             cv_image=self.camera_manager.get_frame()
-            #print("read ok")
+
             cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
             
             # 人脸检测
@@ -87,7 +88,11 @@ class FaceDetector:
                 x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
                 cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+                if match_name!="unknown":
+                    time.sleep(1)#防止一直识别成功
             
+            time.sleep(0.1)#减少识别频次
             # 显示实时画面（可选）
             #cv2.imshow("Face Recognition", cv_image)
             #cv2.waitKey(1)
