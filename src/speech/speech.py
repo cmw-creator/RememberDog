@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-#目前功能不正常，windows和ubuntu部分模块不通用
+#目前功能不正常，windows和ubuntu部分模块不通用,windows没有snowboydecoder
+#考虑到一直在识别应该也没是，这个文件弃用了，暂时由语音助手代替
 
 #import rospy
 import threading
