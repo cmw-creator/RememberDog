@@ -13,7 +13,7 @@ class VoiceAssistant:
         self.memory_manager = memory_manager
         
         # 硬件配置
-        self.mic = sr.Microphone(device_index=)
+        self.mic = sr.Microphone(device_index=1)
         self.recognizer = sr.Recognizer()
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)
