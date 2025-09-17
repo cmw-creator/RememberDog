@@ -3,7 +3,7 @@ from vision.qr_code_detector  import  QRCodeDetector
 from vision.face_detector  import  FaceDetector
 from vision.photo_detector  import  PhotoDetector
 from vision.hand_pose_estimator import HandPoseEstimator
-from speech.voice_assistant_online import VoiceAssistant
+from speech.voice_assistant import VoiceAssistant
 from memory.memory_manager import MemoryManager  # 新增
 import threading
 
