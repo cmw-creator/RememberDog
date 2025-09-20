@@ -4,17 +4,20 @@ from vision.face_detector  import  FaceDetector
 from vision.photo_detector  import  PhotoDetector
 from vision.hand_pose_estimator import HandPoseEstimator
 from speech.voice_assistant import VoiceAssistant
-from memory.memory_manager import MemoryManager  # 新增
+from memory.memory_manager import MemoryManager 
+from speech.speech_engine import SpeechEngine
 import threading
 
 def main():
     # 创建记忆管理器
     memory_manager = MemoryManager()
+    #创建语音引擎
+    speech_engine = SpeechEngine(memory_manager)
 
     # 创建摄像头管理器
     cam_manager = CameraManager()
     cam_manager.start()
-    
+
     # 创建检测器
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
     face_detector=FaceDetector(cam_manager,memory_manager)
@@ -45,7 +48,7 @@ def main():
     # 为每个检测器创建单独的线程
     qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
     face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
-    photo_thread = threading.Thread(target=photo_detector.run, name="Photo_Detector")
+    photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
     hand_thread = threading.Thread(target=hand_estimator.run_estimation, name="Hand_Pose_Estimator")
     
     # 启动所有线程
@@ -63,6 +66,7 @@ def main():
     memory_manager.update_module_status("HandPoseEstimator", "running")
     memory_manager.update_module_status("VoiceAssistant", "running")
     memory_manager.update_module_status("MemoryManager", "running")
+    memory_manager.update_module_status("SpeechEventHandler", "running")
     
 if __name__ == '__main__':
     main()
