@@ -31,8 +31,28 @@ class FaceDetector:
         self.camera_manager = camera_manager #使用的摄像头
         self.memory_manager = memory_manager # 添加 memory_manager 引用
         # 性能优化
-        self.frame_skip = 2  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 20  # 如果为2，则每3帧处理1帧
         self.frame_count = 0
+
+        self.recently_processed = {}  # 记录最近处理的二维码和时间戳
+        self.cooldown_period = 20  # 冷却时间（秒）
+
+
+        # 存储识别的编码数据（人脸ID->语音映射），现在先写在这，以后读取文件获取
+        self.face_db = {
+            "face_00001": "这是你的大女儿，她今年30岁了，她在上海工作，前天刚刚来看你呢。",
+            "face_00002": "这是你的二女儿，她今年28岁，是一名医生，住在北京，每周都会给你打电话。",
+            "face_00003": "这是你的儿子，他今年35岁，是一名工程师，有两个可爱的孩子，周末经常带他们来看你。",
+            "face_00004": "这是你的老伴，你们已经一起生活了40年，她最喜欢给你做红烧肉。",
+            "face_00005": "这是你的孙子小明，他今年8岁，上小学二年级，最喜欢和你下象棋。",
+            "face_00006": "这是你的孙女小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
+            "face_00007": "这是你的好朋友老张，你们是多年的棋友，每周三都会一起下棋。",
+            "face_00008": "这是你的邻居李阿姨，她经常帮你买菜，是你很好的朋友。",
+            "face_00009": "这是你的护工小刘，她每天上午来帮你做家务和陪你去散步。",
+            "face_00010": "这是你的外甥小王，他每个月都会来看你，每次都带你喜欢的水果。",
+            "face_00011": "这是你的堂弟老陈，你们从小一起长大，现在虽然不住在一起，但经常视频聊天。",
+            "face_00012": "这是你的老同事赵老师，你们以前一起教书，退休后还经常一起喝茶聊天。"
+        }
 
     def load_known_faces(self, dir_path):
         """加载已知人脸的特征描述符"""
@@ -46,82 +66,128 @@ class FaceDetector:
                 descriptor = np.array(self.face_recognizer.compute_face_descriptor(img_rgb, shape))
                 known_faces[file.split(".")[0]] = descriptor  # 文件名作为人名（如"女儿.jpg"）
         return known_faces
+    
+    def should_process_qr(self, data):
+        """检查是否应该处理这个二维码（防重复机制）"""
+        current_time = time.time()
+        
+        # 如果这个二维码最近被处理过，并且在冷却期内，则跳过
+        if data in self.recently_processed:
+            last_processed_time = self.recently_processed[data]
+            if current_time - last_processed_time < self.cooldown_period:
+                return False
+        
+        # 更新处理时间
+        self.recently_processed[data] = current_time
+        return True
 
-    def run(self):# + msg
+    def cleanup_old_entries(self):
+        """清理过期的记录，防止内存无限增长"""
+        current_time = time.time()
+        keys_to_remove = []
+        
+        for data, timestamp in self.recently_processed.items():
+            if current_time - timestamp > self.cooldown_period * 2:  # 两倍冷却时间后清理
+                keys_to_remove.append(data)
+        
+        for key in keys_to_remove:
+            del self.recently_processed[key]
+    
+    def run_detection(self):# + msg
         """处理摄像头图像"""
-        self.frame_count += 1
-        if self.frame_count % self.frame_skip != 0:
-            return  # 跳过部分帧以降低计算负载
-        
-        
-        try:
-            # 转换ROS图像消息为OpenCV格式
-            #cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            cv_image=self.camera_manager.get_frame()
-
-            cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-            
-            # 人脸检测
-            faces = self.detector(cv_image_rgb, 0)  # 不进行上采样（速度优先）
-            
-            for face in faces:
-                # 关键点检测与特征提取
-                shape = self.predictor(cv_image_rgb, face)
-                descriptor = np.array(self.face_recognizer.compute_face_descriptor(cv_image_rgb, shape))
-                
-                # 与已知人脸比对
-                match_name = "unknown"
-                min_distance = 0.6  # 相似度阈值（<0.6可视为同一人）
-                
-                for name, known_descriptor in self.known_faces.items():
-                    distance = np.linalg.norm(descriptor - known_descriptor)
-                    if distance < min_distance:
-                        min_distance = distance
-                        match_name = name
-                
-                # 发布识别结果
-                result_msg = f"识别到: {match_name} (可信度: {1 - min_distance:.2f})"
-                print(result_msg)
-                #self.result_pub.publish(result_msg)
-                
-                
-                # 在图像上绘制结果（调试用）
-                x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
-                cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-                if match_name!="unknown":
-                    # 通过记忆管理器共享信息
-                    self.memory_manager.set_shared_data(
-                        "last_recognized_face", 
-                        {"name": match_name, "confidence": 1 - min_distance},
-                        "FaceDetector"
-                    )
-                    self.memory_manager.trigger_event("face_recognized", {
-                        "name": match_name,
-                        "confidence": 1 - min_distance,
-                        "timestamp": time.time()
-                    })
-                    time.sleep(1)#防止一直识别成功
-            
-            time.sleep(0.1)#减少识别频次
-            # 显示实时画面（可选）
-            #cv2.imshow("Face Recognition", cv_image)
-            #cv2.waitKey(1)
-            
-        except Exception as e:
-            #rospy.logerr(f"处理图像失败: {str(e)}")
-            print(f"处理图像失败: {str(e)}")
-    def run_detection(self):
         print("启动人脸识别")
         while True:
-            self.run()
+            self.frame_count += 1
+            if self.frame_count % self.frame_skip != 0:
+                time.sleep(0.01)
+                continue  # 跳过部分帧以降低计算负载
+            
+            
+            try:
+                # 转换ROS图像消息为OpenCV格式
+                #cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+                cv_image=self.camera_manager.get_frame()
+
+                cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+                
+                # 人脸检测
+                faces = self.detector(cv_image_rgb, 0)  # 不进行上采样（速度优先）
+                
+                for face in faces:
+                    # 关键点检测与特征提取
+                    shape = self.predictor(cv_image_rgb, face)
+                    descriptor = np.array(self.face_recognizer.compute_face_descriptor(cv_image_rgb, shape))
+                    
+                    # 与已知人脸比对
+                    match_name = "unknown"
+                    min_distance = 0.6  # 相似度阈值（<0.6可视为同一人）
+                    
+                    for name, known_descriptor in self.known_faces.items():
+                        distance = np.linalg.norm(descriptor - known_descriptor)
+                        if distance < min_distance:
+                            min_distance = distance
+                            match_name = name
+                    
+                    # 发布识别结果
+                    result_msg = f"识别结果:{match_name} (可信度: {1 - min_distance:.2f})"
+                    print(result_msg)
+                    
+                    # 在图像上绘制结果（调试用）
+                    x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
+                    cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+                    if match_name!="unknown":
+                        if self.should_process_qr(match_name):
+                            if match_name in self.face_db:
+                                speak_text=self.face_db[match_name]
+                            else:
+                                speak_text="数据库里没有该人的故事信息"
+                            # 通过记忆管理器共享信息
+                            print(f"发送识别到: {match_name} (可信度: {1 - min_distance:.2f})")
+                            self.memory_manager.set_shared_data(
+                                "last_recognized_face", 
+                                {"name": match_name, "confidence": 1 - min_distance},
+                                "FaceDetector"
+                            )
+                            self.memory_manager.trigger_event("face_detected", {
+                                "name": match_name,
+                                "confidence": 1 - min_distance,
+                                "speak_text": speak_text,
+                                "timestamp": time.time()
+                            })
+                    time.sleep(1)#防止一直识别成功
+
+                # 清理过期的记录
+                if self.frame_count % 60 == 0:  # 每60帧清理一次
+                    self.cleanup_old_entries()
+                
+                time.sleep(0.1)#减少识别频次
+                # 显示实时画面（可选）
+                #cv2.imshow("Face Recognition", cv_image)
+                #cv2.waitKey(1)
+                
+            except Exception as e:
+                #rospy.logerr(f"处理图像失败: {str(e)}")
+                print(f"处理图像失败: {str(e)}")
 
 if __name__ == '__main__':
     print("人脸识别测试")
+    import sys
+    # 添加项目根目录到Python路径
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)
+    sys.path.append(project_root)
+
     from camera_manager  import  CameraManager
+    from memory.memory_manager import MemoryManager
+    from speech.speech_engine import SpeechEngine
+    
     cam_manager=CameraManager()
     cam_manager.start()
+
+    memory_manager = MemoryManager()
+    speech_engine = SpeechEngine(memory_manager)
     
-    face_detector=FaceDetector(cam_manager)
+    face_detector=FaceDetector(cam_manager,memory_manager)
     face_detector.run_detection()
