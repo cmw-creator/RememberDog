@@ -43,7 +43,7 @@ def main():
     qr_thread.start()
     face_thread.start()
     photo_thread.start()
-    hand_thread.start()
+    #hand_thread.start()
     memory_manager.start()#内部创造线程了
     voice_assistant.start()#内部创造线程了
    

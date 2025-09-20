@@ -91,6 +91,7 @@ class MemoryManager:
             # 检查时间是否匹配
             if reminder["time"] == current_time:
                 self.speak(f"提醒: {reminder['event']}")
+                print(f"假装在说:提醒: {reminder['event']}")
                 reminder["completed"] = True
                 self.save_json(self.reminders, "assets/reminders.json")
     
@@ -149,7 +150,8 @@ if __name__ == "__main__":
     reminders = {
         "reminders": [
             {"time": "08:00", "event": "吃降压药", "completed": False},
-            {"time": "12:00", "event": "吃维生素D", "completed": False}
+            {"time": "12:00", "event": "吃维生素D", "completed": False},
+            {"time": "16:40", "event": "提醒测试", "completed": False}
         ]
     }
     
