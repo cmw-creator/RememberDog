@@ -8,17 +8,21 @@ from memory.memory_manager import MemoryManager  # 新增
 import threading
 
 def main():
+    # 创建记忆管理器
+    memory_manager = MemoryManager()
+
     # 创建摄像头管理器
     cam_manager = CameraManager()
     cam_manager.start()
     
     # 创建检测器
-    qr_detector = QRCodeDetector(cam_manager)
-    face_detector=FaceDetector(cam_manager)
-    photo_detector=PhotoDetector(cam_manager)
+    qr_detector = QRCodeDetector(cam_manager,memory_manager)
+    face_detector=FaceDetector(cam_manager,memory_manager)
+    photo_detector=PhotoDetector(cam_manager,memory_manager)
     # 创建手部姿态检测器
     hand_estimator = HandPoseEstimator(
         cam_manager,
+        memory_manager,
 #        model_path="./assets/handpose_x/weights/ReXNetV1-size-256-wingloss102-0.122.pth", #模型更大
 #        model='ReXNetV1',
         model_path="./assets/handpose_x/weights/squeezenet1_1-size-256-loss-0.0732.pth",   #轻量模型
@@ -27,11 +31,16 @@ def main():
         GPUS='0',
         img_size=(256, 256)
     )
-    # 创建记忆管理器
-    memory_manager = MemoryManager()
+    
     voice_assistant = VoiceAssistant(memory_manager)
     
 
+    # 注册模块状态
+    memory_manager.update_module_status("QRCodeDetector", "initialized")
+    memory_manager.update_module_status("FaceDetector", "initialized")
+    memory_manager.update_module_status("PhotoDetector", "initialized")
+    memory_manager.update_module_status("HandPoseEstimator", "initialized")
+    memory_manager.update_module_status("VoiceAssistant", "initialized")
 
     # 为每个检测器创建单独的线程
     qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
@@ -46,6 +55,14 @@ def main():
     #hand_thread.start()
     memory_manager.start()#内部创造线程了
     voice_assistant.start()#内部创造线程了
-   
+
+    # 更新模块状态为运行中
+    memory_manager.update_module_status("QRCodeDetector", "running")
+    memory_manager.update_module_status("FaceDetector", "running")
+    memory_manager.update_module_status("PhotoDetector", "running")
+    memory_manager.update_module_status("HandPoseEstimator", "running")
+    memory_manager.update_module_status("VoiceAssistant", "running")
+    memory_manager.update_module_status("MemoryManager", "running")
+    
 if __name__ == '__main__':
     main()

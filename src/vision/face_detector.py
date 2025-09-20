@@ -11,7 +11,7 @@ import time
 #from cv_bridge import CvBridge
 
 class FaceDetector:
-    def __init__(self, camera_manager):
+    def __init__(self, camera_manager,memory_manager):
         print("开始加载人脸识别")
         # ROS节点初始化
         #rospy.init_node('face_recognition_node', anonymous=True)
@@ -29,6 +29,7 @@ class FaceDetector:
         #self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.image_callback)
         #self.result_pub = rospy.Publisher("/face_recognition/result", String, queue_size=10)
         self.camera_manager = camera_manager #使用的摄像头
+        self.memory_manager = memory_manager # 添加 memory_manager 引用
         # 性能优化
         self.frame_skip = 2  # 如果为2，则每3帧处理1帧
         self.frame_count = 0
@@ -90,6 +91,17 @@ class FaceDetector:
                 cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
                 if match_name!="unknown":
+                    # 通过记忆管理器共享信息
+                    self.memory_manager.set_shared_data(
+                        "last_recognized_face", 
+                        {"name": match_name, "confidence": 1 - min_distance},
+                        "FaceDetector"
+                    )
+                    self.memory_manager.trigger_event("face_recognized", {
+                        "name": match_name,
+                        "confidence": 1 - min_distance,
+                        "timestamp": time.time()
+                    })
                     time.sleep(1)#防止一直识别成功
             
             time.sleep(0.1)#减少识别频次

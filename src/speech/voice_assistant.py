@@ -40,6 +40,19 @@ class VoiceAssistant:
         self.format = pyaudio.paInt16
         self.channels = 1
         self.rate = 16000
+
+        # 注册事件回调
+        if self.memory_manager:
+            self.memory_manager.register_event_callback(
+                "medicine_detected", 
+                self.handle_medicine_event,
+                "VoiceAssistant"
+            )
+            self.memory_manager.register_event_callback(
+                "face_recognized",
+                self.handle_face_event,
+                "VoiceAssistant"
+            )
         
     def setup_voice_recognition(self):
         """设置本地语音识别"""
@@ -369,7 +382,17 @@ class VoiceAssistant:
                 print("模型已加载，但识别无结果")
         
         return result
-
+    def handle_medicine_event(self, event_data):
+        """处理药品检测事件"""
+        medicine_info = event_data.get("info", "")
+        self.speak(f"提醒您，刚才识别到了药品：{medicine_info}")
+    
+    def handle_face_event(self, event_data):
+        """处理人脸识别事件"""
+        name = event_data.get("name", "")
+        confidence = event_data.get("confidence", 0)
+        if confidence > 0.7:  # 高置信度
+            self.speak(f"看到{name}来了，真高兴！")
 
 if __name__ == "__main__":
     # 测试代码

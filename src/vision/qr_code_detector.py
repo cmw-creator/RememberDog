@@ -12,12 +12,13 @@ import pyttsx3  # 离线TTS引擎
 import threading
 
 class QRCodeDetector:
-    def __init__(self, camera_manager):
+    def __init__(self, camera_manager, memory_manager):
         # 初始化ROS节点，现在暂时不用ros
         #rospy.init_node('qr_barcode_detector', anonymous=True)
         
         # 硬件配置
         self.camera_manager = camera_manager #摄像头
+        self.memory_manager = memory_manager  #记忆模块
         # 语音引擎初始化
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)  # 语速调节
@@ -64,6 +65,18 @@ class QRCodeDetector:
         if data in self.medical_db:
             medicine_info = self.medical_db[data]
             self.speak(f"识别到药品二维码，{medicine_info}")
+
+            # 通过记忆管理器共享信息
+            self.memory_manager.set_shared_data(
+                    "last_detected_medicine", 
+                    {"name": data, "info": medicine_info},
+                    "QRCodeDetector"
+            )
+            self.memory_manager.trigger_event("medicine_detected", {
+                    "medicine": data,
+                    "info": medicine_info,
+                    "timestamp": time.time()
+            })
         else:
             self.speak("未找到该药品信息，请联系家人更新数据库")
 

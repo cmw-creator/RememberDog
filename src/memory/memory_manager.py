@@ -21,6 +21,10 @@ class MemoryManager:
         self.quiz_thread = None
         # 提醒线程
         self.reminder_thread = None
+        ### 共享数据初始化 ###
+        self.shared_memory = {}  # 共享内存字典
+        self.event_callbacks = {}  # 事件回调函数注册表
+        self.lock = threading.Lock()  # 线程安全锁
         
     def load_json(self, file_path):
         """加载JSON文件"""
@@ -136,6 +140,53 @@ class MemoryManager:
         if self.reminder_thread:
             self.reminder_thread.join(timeout=1.0)
 
+
+    ### 共享数据方法 ###
+    def set_shared_data(self, key, value, module_name=""):
+        """设置共享数据"""
+        with self.lock:
+            self.shared_memory[key] = {
+                "value": value,
+                "timestamp": time.time(),
+                "source": module_name
+            }
+    
+    def get_shared_data(self, key, default=None):
+        """获取共享数据"""
+        with self.lock:
+            return self.shared_memory.get(key, {}).get("value", default)
+    
+    def register_event_callback(self, event_type, callback_func, module_name=""):
+        """注册事件回调函数"""
+        if event_type not in self.event_callbacks:
+            self.event_callbacks[event_type] = []
+        self.event_callbacks[event_type].append({
+            "callback": callback_func,
+            "module": module_name
+        })
+    
+    def trigger_event(self, event_type, event_data=None):
+        """触发事件，通知所有注册的模块"""
+        if event_type in self.event_callbacks:
+            for callback_info in self.event_callbacks[event_type]:
+                try:
+                    callback_info["callback"](event_data)
+                except Exception as e:
+                    print(f"事件回调执行失败: {str(e)}")
+    
+    # 添加模块状态跟踪
+    def update_module_status(self, module_name, status, info=None):
+        """更新模块状态"""
+        status_key = f"module_status_{module_name}"
+        self.set_shared_data(status_key, {
+            "status": status,
+            "info": info,
+            "timestamp": time.time()
+        }, "memory_manager")
+    
+    def get_module_status(self, module_name):
+        """获取模块状态"""
+        return self.get_shared_data(f"module_status_{module_name}")
 # 测试代码
 if __name__ == "__main__":
     # 创建示例数据

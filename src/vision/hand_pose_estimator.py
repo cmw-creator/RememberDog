@@ -21,9 +21,10 @@ from models.rexnetv1 import ReXNetV1
 from hand_data_iter.datasets import draw_bd_handpose
 
 class HandPoseEstimator:
-    def __init__(self, camera_manager, model_path='./weights/ReXNetV1-size-256-wingloss102-0.122.pth', 
+    def __init__(self, camera_manager,memory_manager, model_path='./weights/ReXNetV1-size-256-wingloss102-0.122.pth', 
                  model='ReXNetV1', num_classes=42, GPUS='0', img_size=(256, 256)):
         self.camera_manager = camera_manager
+        self.memory_manager = memory_manager 
         self.model_path = model_path
         self.model_type = model
         self.num_classes = num_classes
@@ -188,8 +189,19 @@ class HandPoseEstimator:
                         "y": y,
                     }
                 #识别手势，包括手掌张开，一 二 三的手势
-                #gesture = self.recognize_gesture(pts_hand)
-                #print(gesture)
+                gesture = self.recognize_gesture(pts_hand)
+                print(gesture)
+                # 通过记忆管理器共享手势信息
+                if self.memory_manager and gesture != "未知手势":
+                    self.memory_manager.set_shared_data(
+                        "last_detected_gesture",
+                        {"gesture": gesture, "details": pts_hand},
+                        "HandPoseEstimator"
+                    )
+                    self.memory_manager.trigger_event("gesture_detected", {
+                        "gesture": gesture,
+                        "timestamp": time.time()
+                    })
 
                 # 绘制手部关键点和连线
                 draw_bd_handpose(img, pts_hand, 0, 0)
