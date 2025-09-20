@@ -8,11 +8,12 @@ import time
 import threading
 
 class PhotoDetector:
-    def __init__(self, camera_manager):
+    def __init__(self, camera_manager, memory_manager):
         #场景匹配器初始化
         self.reference_folder = "assets/photo_detector"
 
         self.camera_manager = camera_manager #摄像头
+        self.memory_manager = memory_manager  #记忆模块
         # 特征检测器和匹配器
         self.sift = cv2.SIFT_create()
         self.flann = self._create_flann_matcher()
@@ -169,7 +170,17 @@ class PhotoDetector:
             if match_result:
                 match_text = f"匹配到: {match_result['name']} ({match_result['match_count']} points)"
                 print(match_text)
-                
+                # 通过记忆管理器共享信息
+                self.memory_manager.set_shared_data(
+                    "last_matched_scene",
+                    {"scene": match_result['name'], "score": match_result['match_count']},
+                    "PhotoDetector"
+                )
+                self.memory_manager.trigger_event("scene_matched", {
+                    "scene": match_result['name'],
+                    "score": match_result['match_count'],
+                    "timestamp": time.time()
+                })
                 # 显示匹配点图像
                 #if debug_img is not None:
                 #    cv2.imshow('Good Matches', debug_img)
