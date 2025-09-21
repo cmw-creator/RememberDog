@@ -38,6 +38,7 @@ class MemoryManager:
     
     def save_json(self, data, file_path):
         """保存JSON文件"""
+        print("准备保存文件")
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
@@ -57,6 +58,7 @@ class MemoryManager:
             "completed": False
         })
         self.save_json(self.reminders, "assets/reminders.json")
+        print(f"已经添加新的提醒{event}并保存到文件")
     
     def get_random_question(self):
         """随机获取一个问题"""
