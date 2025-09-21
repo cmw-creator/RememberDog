@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # 增强版本地语音助手 - 使用本地识别和处理
+from .speech_service import speech_service
 import threading
 import json
 import time
 import os
 import re
 from datetime import datetime, timedelta
-import pyttsx3
 import wave
 import pyaudio
 import numpy as np
@@ -16,25 +16,20 @@ class VoiceAssistant:
     def __init__(self, memory_manager):
         # 初始化记忆管理器
         self.memory_manager = memory_manager
-        
-        # 语音识别模型路径 - 需要提前下载中文模型
+
+        # 语音识别模型路径
         self.model_path = "assets/voice_models/vosk-model-small-cn-0.22"
-        
+
         # 初始化语音识别
         self.setup_voice_recognition()
-        
-        # 语音合成引擎
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)
-        self.engine.setProperty('volume', 0.9)
-        
+
         # 运行状态
         self.running = True
         self.listening = False
-        
+
         # 本地命令数据库
         self.commands_db = self.load_commands_db()
-        
+
         # 音频参数
         self.chunk = 1024
         self.format = pyaudio.paInt16
@@ -44,7 +39,7 @@ class VoiceAssistant:
         # 注册事件回调
         if self.memory_manager:
             self.memory_manager.register_event_callback(
-                "medicine_detected", 
+                "medicine_detected",
                 self.handle_medicine_event,
                 "VoiceAssistant"
             )
@@ -317,14 +312,11 @@ class VoiceAssistant:
         except Exception as e:
             self.speak("添加问题失败，请重试")
             print(f"添加问题错误: {str(e)}")
-    
+
     def speak(self, text):
-        """语音合成"""
-        def run():
-            self.engine.say(text)
-            self.engine.runAndWait()
-        threading.Thread(target=run).start()
-    
+        """语音合成 - 使用全局语音服务"""
+        speech_service.add_speech(text, priority=1)
+
     def speak_random(self, texts):
         """随机选择一段文本进行语音合成"""
         if texts:
