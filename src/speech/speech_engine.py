@@ -20,7 +20,12 @@ class SpeechEngine:
         self.running = True
         
         # 注册事件回调
-
+        # 通用的发声时间 #
+        self.memory_manager.register_event_callback(
+            "medicine_detected2", 
+            self.handle_medicine_event,
+            "SpeechEventHandler2"
+        )
         # 二维码 #
         self.memory_manager.register_event_callback(
             "medicine_detected", 
