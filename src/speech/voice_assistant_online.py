@@ -4,7 +4,6 @@ import json
 import time
 import speech_recognition as sr
 import pyttsx3
-from memory.memory_manager import MemoryManager
 # from std_msgs.msg import String
 
 class VoiceAssistant:
@@ -168,8 +167,15 @@ class VoiceAssistant:
 
 # 修改主程序集成语音助手
 def main():
-    # ... (其他初始化代码)
+    import sys
+    import os
     
+    # 添加项目根目录到Python路径
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)
+    sys.path.append(project_root)
+    from memory.memory_manager import MemoryManager
+
     # 创建记忆管理器
     memory_manager = MemoryManager()
     memory_manager.start()
@@ -178,5 +184,7 @@ def main():
     voice_assistant = VoiceAssistant(memory_manager)
     voice_assistant.start()
     
-    # ... (其他线程启动代码)
+    time.sleep(1000)
 
+if __name__ == '__main__':
+    main()
