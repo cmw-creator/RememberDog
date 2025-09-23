@@ -5,6 +5,7 @@ import threading
 import os
 from datetime import datetime, timedelta
 import pyttsx3
+from memory.qa_manager import QAManager
 
 class MemoryManager:
     def __init__(self, family_info_path="assets/family_info.json", reminder_path="assets/reminders.json"):
@@ -25,6 +26,9 @@ class MemoryManager:
         self.shared_memory = {}  # 共享内存字典
         self.event_callbacks = {}  # 事件回调函数注册表
         self.lock = threading.Lock()  # 线程安全锁
+
+        #QA_Manager
+        self.qa_manager=QAManager()
         
     def load_json(self, file_path):
         """加载JSON文件"""

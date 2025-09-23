@@ -8,6 +8,8 @@ from memory.memory_manager import MemoryManager
 from speech.speech_engine import SpeechEngine
 import threading
 
+from memory.qa_manager import QAManager
+
 def main():
     # 创建记忆管理器
     memory_manager = MemoryManager()
@@ -26,15 +28,13 @@ def main():
     hand_estimator = HandPoseEstimator(
         cam_manager,
         memory_manager,
-#        model_path="./assets/handpose_x/weights/ReXNetV1-size-256-wingloss102-0.122.pth", #模型更大
-#        model='ReXNetV1',
         model_path="./assets/handpose_x/weights/squeezenet1_1-size-256-loss-0.0732.pth",   #轻量模型
         model='squeezenet1_1',
         num_classes=42,
         GPUS='0',
         img_size=(256, 256)
     )
-    
+
     voice_assistant = VoiceAssistant(memory_manager)
     
 

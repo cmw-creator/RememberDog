@@ -113,7 +113,7 @@ class QRCodeDetector:
 
     def run_detection(self):
         """主循环：实时识别并处理结果"""
-        print("启动二维码识别")
+        print("启动条形码和二维码识别")
 
         while True:
             frame = self.camera_manager.get_frame()
