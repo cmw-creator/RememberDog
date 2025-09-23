@@ -6,7 +6,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 class QAManager:
-    def __init__(self, data_path="assets/family_info.json", model_name="paraphrase-multilingual-MiniLM-L12-v2"):
+    def __init__(self, data_path="assets/family_info.json", model_name="assets/paraphrase-multilingual-MiniLM-L12-v2"):
         self.data_path = data_path
         self.model = SentenceTransformer(model_name)
         self.questions = []

@@ -236,7 +236,7 @@ class PhotoDetector:
                         {"photo_name": photo_name, "score": score},
                         "PhotoDetector"
                     )
-                    self.memory_manager.trigger_event("photo_detected", {
+                    self.memory_manager.trigger_event("speak_event", {
                         "photo_name": photo_name,
                         "score": score,
                         "speak_text": speak_text,

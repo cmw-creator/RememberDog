@@ -102,7 +102,7 @@ class QRCodeDetector:
                     {"name": data, "info": medicine_info},
                     "QRCodeDetector"
             )
-            self.memory_manager.trigger_event("medicine_detected", {
+            self.memory_manager.trigger_event("speak_event", {
                     "medicine": data,
                     "info": medicine_info,
                     "speak_text" : medicine_info,
