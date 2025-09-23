@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+#MiniLM模型
+pytorch_model.bin
+tokenizer.json
+#测试生成的语言
+test_enhanced.wav
+test_raw.wav

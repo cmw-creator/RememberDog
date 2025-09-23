@@ -150,7 +150,7 @@ class FaceDetector:
                                 {"name": match_name, "confidence": 1 - min_distance},
                                 "FaceDetector"
                             )
-                            self.memory_manager.trigger_event("face_detected", {
+                            self.memory_manager.trigger_event("speak_event", {
                                 "name": match_name,
                                 "confidence": 1 - min_distance,
                                 "speak_text": speak_text,

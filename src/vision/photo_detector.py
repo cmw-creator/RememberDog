@@ -117,7 +117,7 @@ class PhotoDetector:
         """
         # 转换为灰度图
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
+         
         # 提取当前帧特征
         kp_frame, des_frame = self.sift.detectAndCompute(gray_frame, None)
         
@@ -236,7 +236,7 @@ class PhotoDetector:
                         {"photo_name": photo_name, "score": score},
                         "PhotoDetector"
                     )
-                    self.memory_manager.trigger_event("photo_detected", {
+                    self.memory_manager.trigger_event("speak_event", {
                         "photo_name": photo_name,
                         "score": score,
                         "speak_text": speak_text,

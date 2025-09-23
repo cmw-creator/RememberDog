@@ -22,19 +22,14 @@ class SpeechEngine:
         # 注册事件回调
         # 通用的发声时间 #
         self.memory_manager.register_event_callback(
-            "medicine_detected2", 
-            self.handle_medicine_event,
-            "SpeechEventHandler2"
+            "speak_event", 
+            self.speak_event,
+            "SpeechEventHandler"
         )
         # 二维码 #
         self.memory_manager.register_event_callback(
             "medicine_detected", 
             self.handle_medicine_event,
-            "SpeechEventHandler"
-        )
-        self.memory_manager.register_event_callback(
-            "unknown_medicine_detected",
-            self.handle_unknown_medicine_event,
             "SpeechEventHandler"
         )
         # 人脸识别 #
@@ -56,16 +51,15 @@ class SpeechEngine:
         self.speech_thread.start()
         
         print("语音事件处理器初始化完成")
-    
+    def speak_event(self, event_data):
+        """处理药品检测事件"""
+        if event_data and "speak_text" in event_data:
+            self.add_to_queue(event_data["speak_text"], priority=0)
+
     def handle_medicine_event(self, event_data):
         """处理药品检测事件"""
         if event_data and "speak_text" in event_data:
             self.add_to_queue(event_data["speak_text"], priority=2)
-    
-    def handle_unknown_medicine_event(self, event_data):
-        """处理未知药品事件"""
-        if event_data and "speak_text" in event_data:
-            self.add_to_queue(event_data["speak_text"], priority=1)
     
     def handle_face_event(self, event_data):
         """处理人脸检测事件"""
