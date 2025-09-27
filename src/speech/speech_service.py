@@ -8,12 +8,16 @@ import time
 class SpeechService:
     def __init__(self, rate=150, volume=0.9):
         """初始化语音服务"""
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', rate)
-        self.engine.setProperty('volume', volume)
+        try:
+            self.engine = pyttsx3.init()
+            self.engine.setProperty('rate', rate)
+            self.engine.setProperty('volume', volume)
+        except Exception as e:
+            print(f"语音引擎初始化失败: {e}")
+            self.engine = None
 
         # 语音队列和线程控制
-        self.speech_queue = queue.Queue()
+        self.speech_queue = queue.PriorityQueue()  # 改为优先级队列
         self.is_speaking = False
         self.running = True
 
@@ -30,12 +34,15 @@ class SpeechService:
             try:
                 if not self.speech_queue.empty():
                     self.is_speaking = True
-                    text = self.speech_queue.get()
-                    self.engine.say(text)
-                    self.engine.runAndWait()
-                    self.is_speaking = False
+                    priority, text = self.speech_queue.get()
 
-                # 短暂休眠以减少CPU使用
+                    if self.engine:
+                        self.engine.say(text)
+                        self.engine.runAndWait()
+
+                    self.is_speaking = False
+                    self.speech_queue.task_done()
+
                 time.sleep(0.1)
 
             except Exception as e:
@@ -55,8 +62,10 @@ class SpeechService:
 
     def is_busy(self):
         """检查语音服务是否正在说话"""
-        return self.is_speaking
+        return self.is_speaking or not self.speech_queue.empty()
 
 
+# 全局语音服务实例
+speech_service = SpeechService()
 # 全局语音服务实例
 speech_service = SpeechService()

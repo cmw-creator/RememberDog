@@ -20,34 +20,25 @@ class VoiceAssistant:
         # 语音识别模型路径
         self.model_path = "assets/voice_models/vosk-model-small-cn-0.22"
 
-        # 初始化语音识别
-        self.setup_voice_recognition()
-
-        # 运行状态
-        self.running = True
-        self.listening = False
-
-        # 本地命令数据库
-        self.commands_db = self.load_commands_db()
-
+        # 延迟初始化语音识别
+        self.model = None
+        self.recognizer = None
+        self._init_voice_recognition()
         # 音频参数
         self.chunk = 1024
         self.format = pyaudio.paInt16
         self.channels = 1
         self.rate = 16000
 
+        # 运行状态
+        self.running = True
+        self.listening = True
+
+        # 本地命令数据库
+        self.commands_db = self.load_commands_db()
+
         # 注册事件回调
-        if self.memory_manager:
-            self.memory_manager.register_event_callback(
-                "medicine_detected",
-                self.handle_medicine_event,
-                "VoiceAssistant"
-            )
-            self.memory_manager.register_event_callback(
-                "face_recognized",
-                self.handle_face_event,
-                "VoiceAssistant"
-            )
+        self._register_event_handlers()
         
     def setup_voice_recognition(self):
         """设置本地语音识别"""
@@ -64,7 +55,83 @@ class VoiceAssistant:
             print(f"语音识别初始化失败: {str(e)}")
             self.model = None
             self.recognizer = None
-    
+
+    def _init_voice_recognition(self):
+        """延迟初始化语音识别"""
+        try:
+            from vosk import Model, KaldiRecognizer
+            model_path = "assets/voice_models/vosk-model-small-cn-0.22"
+
+            if os.path.exists(model_path):
+                self.model = Model(model_path)
+                self.recognizer = KaldiRecognizer(self.model, 16000)
+                print("本地语音识别模型加载成功")
+            else:
+                print(f"语音模型路径不存在: {model_path}")
+                # 使用备用方案
+                self._init_fallback_recognition()
+
+        except ImportError as e:
+            print(f"无法导入Vosk: {e}")
+            self._init_fallback_recognition()
+        except Exception as e:
+            print(f"语音识别初始化失败: {e}")
+            self._init_fallback_recognition()
+
+    def _init_fallback_recognition(self):
+        """备用语音识别方案"""
+        print("使用备用语音识别方案")
+        # 这里可以添加其他识别库或简化版本
+
+    def _register_event_handlers(self):
+        """注册事件处理器"""
+        if self.memory_manager:
+            self.memory_manager.register_event_callback(
+                "medicine_detected", self.handle_medicine_event, "VoiceAssistant"
+            )
+            self.memory_manager.register_event_callback(
+                "face_recognized", self.handle_face_event, "VoiceAssistant"
+            )
+
+    def listen_command(self):
+        """监听语音指令"""
+        if not self.recognizer:
+            print("语音识别未就绪")
+            return
+
+        try:
+            p = pyaudio.PyAudio()
+            stream = p.open(
+                format=self.format,
+                channels=self.channels,
+                rate=self.rate,
+                input=True,
+                frames_per_buffer=self.chunk
+            )
+
+            print("语音助手开始监听...")
+            while self.running and self.listening:
+                try:
+                    data = stream.read(self.chunk, exception_on_overflow=False)
+
+                    if self.recognizer.AcceptWaveform(data):
+                        result = json.loads(self.recognizer.Result())
+                        text = result.get('text', '')
+
+                        if text and len(text.strip()) > 0:
+                            print(f"识别结果: {text}")
+                            self.process_command(text)
+
+                except Exception as e:
+                    print(f"语音处理错误: {e}")
+                    time.sleep(0.1)
+
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+
+        except Exception as e:
+            print(f"音频流错误: {e}")
     def load_commands_db(self):
         """加载本地命令数据库"""
         commands_path = "assets/voice_commands/commands.json"
@@ -84,7 +151,7 @@ class VoiceAssistant:
                 "unknown": ["我没有听懂，请再说一次", "抱歉，我不明白", "请重复一遍"]
             }
         }
-        
+
         if os.path.exists(commands_path):
             try:
                 with open(commands_path, 'r', encoding='utf-8') as f:
@@ -98,12 +165,12 @@ class VoiceAssistant:
             with open(commands_path, 'w', encoding='utf-8') as f:
                 json.dump(default_commands, f, ensure_ascii=False, indent=2)
             return default_commands
-    
+
     def recognize_speech_offline(self, audio_data):
         """使用本地模型识别语音"""
         if self.recognizer is None:
             return None
-            
+
         try:
             if self.recognizer.AcceptWaveform(audio_data):
                 result = json.loads(self.recognizer.Result())
