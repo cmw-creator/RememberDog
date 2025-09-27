@@ -1,11 +1,13 @@
 import numpy as np
-import tensorflow as tf
 import threading
 import queue
 import time
 import os
-from pathlib import Path
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # 禁用 GPU
+import tensorflow as tf
 
+print("TensorFlow 版本:", tf.__version__)
+print("可用设备:", tf.config.list_physical_devices())
 
 class EnhancedNoiseDetectorYamnet:
     """基于YAMNet的增强噪声检测器"""
@@ -73,21 +75,49 @@ class EnhancedNoiseDetectorYamnet:
     def _init_yamnet_model(self, model_path):
         """初始化YAMNet模型"""
         try:
-            # 动态导入YAMNet相关模块
+            # 方法1：直接导入当前目录的YAMNet模块
             import sys
-            yamnet_dir = Path(__file__).parent / "yamnet"
-            sys.path.insert(0, str(yamnet_dir))
+            import os
 
-            from params import Params
-            import yamnet as yamnet_model
+            # 获取当前文件所在目录的绝对路径
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # 尝试多种可能的YAMNet路径
+            possible_paths = [
+                os.path.join(current_dir, "yamnet"),  # 同级目录下的yamnet文件夹
+                os.path.join(current_dir, "..", "yamnet"),  # 上级目录的yamnet文件夹
+                "E:/RememberDog/assets/voice_models/yamnet",  # 绝对路径
+                "assets/voice_models/yamnet",  # 相对路径
+            ]
+
+            yamnet_dir = None
+            for path in possible_paths:
+                if os.path.exists(path) and os.path.exists(os.path.join(path, "yamnet.py")):
+                    yamnet_dir = path
+                    break
+
+            if not yamnet_dir:
+                print("❌ 未找到YAMNet模块目录")
+                return False
+
+            # 添加到Python路径
+            if yamnet_dir not in sys.path:
+                sys.path.insert(0, yamnet_dir)
 
             # 设置模型路径
             if model_path is None:
-                model_path = "assets/voice_models/yamnet/yamnet.h5"
+                model_path = os.path.join(yamnet_dir, "yamnet.h5")
 
             if not os.path.exists(model_path):
-                print(f"警告: YAMNet模型文件不存在: {model_path}")
-                return False
+                print(f"❌ 模型文件不存在: {model_path}")
+                # 尝试其他可能的模型路径
+                model_path = self._find_model_file(yamnet_dir)
+                if not model_path:
+                    return False
+
+            # 动态导入YAMNet模块
+            from params import Params
+            import yamnet as yamnet_model
 
             # 初始化参数和模型
             self.params = Params()
@@ -95,23 +125,40 @@ class EnhancedNoiseDetectorYamnet:
             self.model.load_weights(model_path)
 
             # 加载类别名称
-            class_map_path = yamnet_dir / "yamnet_class_map.csv"
+            class_map_path = os.path.join(yamnet_dir, "yamnet_class_map.csv")
             if os.path.exists(class_map_path):
-                self.class_names = yamnet_model.class_names(str(class_map_path))
+                self.class_names = yamnet_model.class_names(class_map_path)
             else:
-                # 使用内置的类别名称作为备用
                 self.class_names = self._get_default_class_names()
 
-            print("YAMNet模型加载成功")
+            print(f"✅ YAMNet模型加载成功: {model_path}")
             return True
 
         except ImportError as e:
-            print(f"导入YAMNet模块失败: {e}")
+            print(f"❌ 导入YAMNet模块失败: {e}")
+            print("Python路径:", sys.path)
             return False
         except Exception as e:
-            print(f"YAMNet模型初始化失败: {e}")
+            print(f"❌ YAMNet模型初始化失败: {e}")
             return False
 
+    def _find_model_file(self, base_dir):
+        """查找模型文件"""
+        possible_locations = [
+            "yamnet.h5",
+            "model.h5",
+            "assets/voice_models/yamnet/yamnet.h5",
+            "E:/RememberDog/assets/voice_models/yamnet/yamnet.h5",
+        ]
+
+        for location in possible_locations:
+            full_path = os.path.join(base_dir, location) if not os.path.isabs(location) else location
+            if os.path.exists(full_path):
+                print(f"✅ 找到模型文件: {full_path}")
+                return full_path
+
+        print("❌ 未找到模型文件，请下载YAMNet模型")
+        return None
     def _get_default_class_names(self):
         """获取默认的类别名称"""
         # 这里是YAMNet的521个类别的简化版本
