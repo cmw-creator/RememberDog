@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import wave
 # 本地语音助手 - 集成降噪和自动增益控制
+from pyrnnoise import RNNoise
+from scipy.signal import resample_poly  # 高质量有理数重采样
 import threading
 import json
 import time
@@ -61,6 +63,7 @@ class VoiceAssistant:
         # 初始化 Q&A 管理器，之后建议放在记忆管理器中
         self.qa_manager = memory_manager.qa_manager
         self.use_online = False   # True: 在线 deepseek / False: 本地 qwen3
+        self.rnnoise = RNNoise(sample_rate=48000)  # RNNoise 按 48kHz 工作
         
     def setup_voice_recognition(self):
         """设置本地语音识别"""
@@ -98,45 +101,67 @@ class VoiceAssistant:
         except Exception as e:
             print(f"噪声样本采集失败: {str(e)}")
             self.noise_profile = None
-    
+
     def apply_audio_enhancement(self, audio_data):
         """
-        应用音频增强处理：降噪 + 自动增益控制[6,7](@ref)
+        RNNoise 前端降噪 + 平滑 AGC + 噪声门
+        - 入口：int16 bytes @ 16kHz
+        - 内部：上采样到 48kHz，送 RNNoise（10ms 帧，480 样本/帧）
+        - 出口：再下采样回 16kHz，按你原有流程做 AGC 与噪声门
         """
-        # 转换为numpy数组并归一化
-        audio_np = np.frombuffer(audio_data, dtype=np.int16)
-        audio_float = audio_np.astype(np.float32) / 32768.0
-        
-        # 应用降噪
-        if self.noise_reduction_enabled and self.noise_profile is not None and len(audio_float) > 0:
-            try:
-                # 使用noisereduce库进行降噪[7](@ref)
-                reduced_noise = nr.reduce_noise(
-                    y=audio_float, 
-                    sr=self.rate, 
-                    y_noise=self.noise_profile,
-                    prop_decrease=0.8,  # 噪声减少比例
-                    n_fft=1024,
-                    hop_length=256
-                )
-                audio_float = reduced_noise
-            except Exception as e:
-                print(f"降噪处理错误: {str(e)}")
-        
-        # 应用自动增益控制 (AGC)
-        if self.agc_enabled and len(audio_float) > 0:
-            audio_float = self.apply_agc(audio_float)
-        
-        # 应用噪声门限
-        if len(audio_float) > 0:
-            rms = np.sqrt(np.mean(audio_float**2))
+        if not audio_data:
+            return audio_data
+
+        # --- bytes -> int16 ndarray ---
+        x16 = np.frombuffer(audio_data, dtype=np.int16)
+        if x16.size == 0:
+            return audio_data
+
+        # --- 上采样到 48kHz（16k -> 48k = 1:3 upsample）---
+        # 用 resample_poly 提升质量和稳定性
+        x48 = resample_poly(x16.astype(np.float32), up=3, down=1).astype(np.int16)
+
+        # --- 组帧并送入 RNNoise ---
+        # RNNoise 的 Python API 支持一次性 chunk：shape [channels, samples]，int16
+        # 你是单声道 -> [1, N]
+        try:
+            mono48 = x48.reshape(1, -1).astype(np.int16)
+            denoised_frames = []
+
+            # 逐帧产出：denoise_chunk 会按 480 样本帧返回
+            for speech_prob, denoised in self.rnnoise.denoise_chunk(mono48):
+                # denoised: shape [1, 480] int16
+                denoised_frames.append(denoised[0])
+
+            if denoised_frames:
+                x48_denoised = np.concatenate(denoised_frames).astype(np.int16)
+            else:
+                x48_denoised = x48  # 回退
+        except Exception as e:
+            print(f"RNNoise 降噪失败，回退到原始音频：{e}")
+            x48_denoised = x48
+
+        # --- 下采样回 16kHz（48k -> 16k = 3:1 downsample）---
+        y16 = resample_poly(x48_denoised.astype(np.float32), up=1, down=3)
+
+        # --- 转 float 做后续处理 ---
+        y = (y16 / 32768.0).astype(np.float32)
+        y = np.nan_to_num(y, nan=0.0, posinf=1.0, neginf=-1.0)
+
+        # --- 你的 AGC（沿用原有实现） ---
+        if self.agc_enabled and y.size > 0:
+            y = self.apply_agc(y)
+
+        # --- 噪声门（沿用你的全段 RMS，但建议后续替换成滞回门限/VAD）---
+        if y.size > 0:
+            rms = float(np.sqrt(max(1e-12, np.mean(y ** 2))))
             if rms < self.noise_gate_threshold:
-                # 低于阈值，认为是噪声，静音处理
-                audio_float = np.zeros_like(audio_float)
-        
-        # 转换回16位整数格式
-        enhanced_audio = (audio_float * 32767.0).astype(np.int16)
-        return enhanced_audio.tobytes()
+                y[:] = 0.0
+
+        # --- 回写 int16 bytes ---
+        y = np.clip(y, -1.0, 1.0)
+        out16 = (y * 32767.0).astype(np.int16)
+        return out16.tobytes()
     
     def apply_agc(self, audio_data):
         """应用自动增益控制"""
@@ -455,7 +480,7 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer=answer
-        #final_answer = self.generate_answer(text, answer)
+        # final_answer = self.generate_answer(text, answer)
         print(f"最终回答: {final_answer}")
         #self.speak(final_answer)
     
