@@ -279,6 +279,7 @@ class EnhancedNoiseDetectorYamnet:
     def process_audio_chunk(self, audio_chunk):
         """处理音频块"""
         try:
+            print(f"接收音频块，长度: {len(audio_chunk)}字节")  # 新增调试日志
             # 转换为numpy数组
             audio_data = np.frombuffer(audio_chunk, dtype=np.int16)
             audio_data = audio_data.astype(np.float32) / 32768.0  # 转换为[-1, 1]
@@ -330,7 +331,13 @@ class EnhancedNoiseDetectorYamnet:
         """添加音频数据到处理队列"""
         if self.running and self.model is not None:
             self.audio_queue.put(audio_data)
-
+        """添加音频数据到处理队列"""
+        if self.running and self.model is not None:
+            self.audio_queue.put(audio_data)
+            # 新增日志：验证数据是否入队
+            print(f"音频数据入队，当前队列大小: {self.audio_queue.qsize()}")
+        else:
+            print("噪声检测器未运行或模型未加载，无法接收音频数据")
     def start(self):
         """启动检测器"""
         if self.model is None:

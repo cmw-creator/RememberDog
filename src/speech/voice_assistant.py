@@ -94,44 +94,84 @@ class VoiceAssistant:
             )
 
     def listen_command(self):
-        """监听语音指令"""
-        if not self.recognizer:
-            print("语音识别未就绪")
-            return
+        """持续监听语音指令并同时进行噪声检测"""
 
-        try:
-            p = pyaudio.PyAudio()
-            stream = p.open(
-                format=self.format,
-                channels=self.channels,
-                rate=self.rate,
-                input=True,
-                frames_per_buffer=self.chunk
+        """持续监听语音指令"""
+        p = pyaudio.PyAudio()
+        stream = p.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            frames_per_buffer=self.chunk
+        )
+
+        print("语音助手已启动，等待唤醒词...")
+        frame_count = 0
+        recognition_attempts = 0
+
+        # 获取噪声检测器实例
+        noise_detector = self.memory_manager.get_module("NoiseDetector")
+        if noise_detector:
+            noise_detector = noise_detector.detector  # 获取实际检测器对象
+
+        while self.running:
+            try:
+                # 读取音频数据
+                data = stream.read(self.chunk, exception_on_overflow=False)
+                frame_count += 1
+
+                # 将音频数据同时发送给噪声检测器
+                if noise_detector and hasattr(noise_detector.detector, 'add_audio_data'):
+                    noise_detector.detector.add_audio_data(data)
+
+                # 每处理一定数量的帧打印一次调试信息
+                if frame_count % 50 == 0:
+                    print(f"已处理 {frame_count} 帧音频数据，尝试识别 {recognition_attempts} 次")
+
+                # 使用本地模型识别语音命令
+                if self.recognizer.AcceptWaveform(data):
+                    recognition_attempts += 1
+                    result = json.loads(self.recognizer.Result())
+                    text = result.get('text', '')
+
+                    if text:
+                        print(f"识别结果: {text}")
+                        self.process_command(text)
+
+            except Exception as e:
+                print(f"语音处理错误: {str(e)}")
+
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+    def _register_event_handlers(self):
+        """注册事件处理器"""
+        if self.memory_manager:
+            # 已有的事件...
+            self.memory_manager.register_event_callback(
+                "urgent_noise_alert", self.handle_urgent_noise, "VoiceAssistant"
+            )
+            self.memory_manager.register_event_callback(
+                "abnormal_noise_detected", self.handle_abnormal_noise, "VoiceAssistant"
             )
 
-            print("语音助手开始监听...")
-            while self.running and self.listening:
-                try:
-                    data = stream.read(self.chunk, exception_on_overflow=False)
+    # 添加事件处理方法
+    def handle_urgent_noise(self, event_data):
+        """处理紧急噪声事件"""
+        noise_type = event_data.get("noise_type", "未知")
+        confidence = event_data.get("confidence", 0)
+        self.speak(f"紧急警报：检测到{noise_type}，置信度{confidence:.2f}")
+        # 可以添加更复杂的处理，如触发报警装置
 
-                    if self.recognizer.AcceptWaveform(data):
-                        result = json.loads(self.recognizer.Result())
-                        text = result.get('text', '')
-
-                        if text and len(text.strip()) > 0:
-                            print(f"识别结果: {text}")
-                            self.process_command(text)
-
-                except Exception as e:
-                    print(f"语音处理错误: {e}")
-                    time.sleep(0.1)
-
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-
-        except Exception as e:
-            print(f"音频流错误: {e}")
+    def handle_abnormal_noise(self, event_data):
+        """处理异常噪声事件"""
+        noise_type = event_data.get("noise_type", "未知")
+        confidence = event_data.get("confidence", 0)
+        print(f"检测到异常噪声：{noise_type}，置信度{confidence:.2f}")
+        # 根据需要添加语音提示
+        # self.speak(f"检测到{noise_type}")
     def load_commands_db(self):
         """加载本地命令数据库"""
         commands_path = "assets/voice_commands/commands.json"

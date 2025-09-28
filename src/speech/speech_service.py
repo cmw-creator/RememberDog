@@ -67,5 +67,3 @@ class SpeechService:
 
 # 全局语音服务实例
 speech_service = SpeechService()
-# 全局语音服务实例
-speech_service = SpeechService()

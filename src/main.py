@@ -1,16 +1,15 @@
-# main.py - 修复版本
+# main.py - 更新版本
 import threading
 import time
 import traceback
-# 在主程序中添加
 import logging
 
-from src.voice.enhanced_noise_detector import logger
-
-logging.basicConfig(level=logging.DEBUG)
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def main():
-    global memory_manager
+    global noise_detector_manager, speech_engine, speech_service, cam_manager
     print("正在初始化系统...")
 
     try:
@@ -34,7 +33,7 @@ def main():
         cam_manager.start()
         print("✓ 摄像头管理器初始化完成")
 
-        # 第五步：初始化各个检测器
+        # 第五步：初始化各个视觉检测器
         from vision.qr_code_detector import QRCodeDetector
         from vision.face_detector import FaceDetector
         from vision.photo_detector import PhotoDetector
@@ -45,20 +44,14 @@ def main():
         print("✓ 视觉检测器初始化完成")
 
         # 第六步：初始化噪声检测器
-        from voice.enhanced_noise_detector import EnhancedNoiseDetector
-        # 如果加载失败，使用简化版
-        noise_detector = EnhancedNoiseDetector(memory_manager, sensitivity=0.7)
-    except Exception as e:
-        logger.warning(f"YAMNet模型加载失败，使用简化版: {e}")
-        from voice.enhanced_noise_detector_fixed import EnhancedNoiseDetectorFixed as EnhancedNoiseDetector
-        noise_detector = EnhancedNoiseDetector(memory_manager, sensitivity=0.7)
-        # 测试麦克风和校准阈值
-        try:
-            noise_detector.test_microphone(duration=3)
-            noise_detector.adjust_energy_threshold(ambient_noise_duration=3)
-            logger.info("噪声检测器校准完成")
-        except Exception as e:
-            logger.error(f"噪声检测器校准失败: {e}")
+        from voice.noise_detector_manager import NoiseDetectorManager
+        noise_detector_manager = NoiseDetectorManager(memory_manager)
+        if noise_detector_manager.initialize_detector():
+            print(f"✓ 噪声检测器初始化完成 - 使用{noise_detector_manager.get_detector_type()}模式")
+        else:
+            print("✗ 噪声检测器初始化失败")
+            noise_detector_manager = None
+
         # 第七步：初始化语音助手
         from speech.voice_assistant import VoiceAssistant
         voice_assistant = VoiceAssistant(memory_manager)
@@ -70,10 +63,12 @@ def main():
             "FaceDetector": face_detector,
             "PhotoDetector": photo_detector,
             "VoiceAssistant": voice_assistant,
-            "NoiseDetector": noise_detector,
             "MemoryManager": memory_manager,
             "SpeechEngine": speech_engine
         }
+
+        if noise_detector_manager:
+            modules["NoiseDetector"] = noise_detector_manager
 
         for name, module in modules.items():
             memory_manager.update_module_status(name, "initialized")
@@ -85,9 +80,10 @@ def main():
         memory_manager.start()
 
         # 2. 启动噪声检测器
-        noise_thread = threading.Thread(target=noise_detector.start, name="NoiseDetector")
-        noise_thread.daemon = True
-        noise_thread.start()
+        if noise_detector_manager:
+            noise_thread = threading.Thread(target=noise_detector_manager.start, name="NoiseDetector")
+            noise_thread.daemon = True
+            noise_thread.start()
 
         # 3. 启动视觉检测器
         qr_thread = threading.Thread(target=qr_detector.run_detection, name="QRDetector")
@@ -114,6 +110,7 @@ def main():
             memory_manager.update_module_status(name, "running")
 
         print("所有模块启动完成，系统正常运行中...")
+        print("噪声检测功能已启用，正在监听环境声音...")
 
         # 主循环
         try:
@@ -132,14 +129,14 @@ def main():
     finally:
         # 清理资源
         try:
-            noise_detector.stop()
+            if noise_detector_manager:
+                noise_detector_manager.stop()
             speech_engine.stop()
             speech_service.stop()
             cam_manager.stop()
             print("系统已安全停止")
         except:
             pass
-
 
 if __name__ == '__main__':
     main()

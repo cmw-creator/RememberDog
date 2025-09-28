@@ -76,7 +76,6 @@ class SpeechEngine:
         """处理异常噪声事件"""
         noise_type = event_data.get("noise_type", "")
         risk_level = event_data.get("risk_level", "")
-        energy = event_data.get("energy", 0)
 
         print(f"检测到异常噪声: {noise_type}, 风险级别: {risk_level}")
 
@@ -99,6 +98,9 @@ class SpeechEngine:
             'moaning_crying': {
                 'medium': "听到您似乎不舒服，需要帮助吗？",
                 'high': "检测到痛苦声音，您还好吗？"
+            },
+            'high_energy': {
+                'medium': "检测到异常声响，您还好吗？"
             }
         }
 
@@ -112,7 +114,8 @@ class SpeechEngine:
         urgent_responses = {
             'impact': "紧急！检测到可能跌倒的声音！您还好吗？",
             'glass_break': "紧急！检测到玻璃破碎！请小心！",
-            'alarm_sound': "紧急！检测到安全警报！"
+            'alarm_sound': "紧急！检测到安全警报！",
+            'high_energy': "紧急！检测到巨大声响！您需要帮助吗？"
         }
 
         response = urgent_responses.get(noise_type, "紧急情况！需要帮助吗？")
