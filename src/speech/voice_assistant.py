@@ -695,7 +695,7 @@ if __name__ == "__main__":
     assistant = VoiceAssistant(memory_manager)
 
     ###
-    '''
+    
     while True:
         text = input("你说: ")
         if text.lower() in ["exit", "quit"]:
@@ -710,7 +710,7 @@ if __name__ == "__main__":
         print(f"最终回答: {final_answer}")
 
     assistant.stop()
-    ''' 
+    
     ###
     # 测试音频增强功能
     # assistant.test_enhancement()
