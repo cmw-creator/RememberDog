@@ -247,7 +247,7 @@ class PhotoDetector:
             time.sleep(0.1)#减少识别频次
             # 显示摄像头画面
             #cv2.imshow('Camera Feed', frame)
-            cv2.waitKey(1)
+            #cv2.waitKey(1)
             
 if __name__ == '__main__':
     print("图片识别测试")
