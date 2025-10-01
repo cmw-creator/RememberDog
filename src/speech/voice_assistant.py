@@ -12,6 +12,9 @@ import pyttsx3
 from vosk import Model, KaldiRecognizer
 import noisereduce as nr
 from scipy import signal
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+
+
 
 class VoiceAssistant:
     def __init__(self, memory_manager):
@@ -60,6 +63,20 @@ class VoiceAssistant:
         # 初始化 Q&A 管理器，之后建议放在记忆管理器中
         self.qa_manager = memory_manager.qa_manager
         self.use_online = False   # True: 在线 deepseek / False: 本地 qwen3
+
+        #self.llama_cli = LlamaCLI(r"C:\soft\develop\llama.cpp\llama-cli.exe"
+        #                          , r"C:\Users\wcm\.lmstudio\models\Qwen\Qwen3-0.6B-GGUF\Qwen3-0.6B-Q8_0.gguf")
+
+        self.model_id = "assets/Qwen3-0.6B"  # 你的本地路径
+
+        '''
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_id,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        '''
         
     def setup_voice_recognition(self):
         """设置本地语音识别"""
@@ -376,7 +393,7 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer=answer
-        #final_answer = self.generate_answer(text, answer)
+        #final_answer = self.generate_answer2(text, answer)
         print(f"最终回答: {final_answer}")
         #self.speak(final_answer)
     
@@ -499,6 +516,11 @@ class VoiceAssistant:
             print("语音输出：",text)
             #self.speak(text)
     
+    def generate_answer(self, user_input, retrieved_answer=""):
+        prompt = f"用户提问: {user_input}相关知识: {retrieved_answer}请用简洁友好的语气回答："
+        answer = self.llama_cli.generate(prompt)
+        return answer
+
     def start(self):
         """启动语音助手"""
         print("启动增强版语音助手（带降噪功能）")
@@ -515,17 +537,19 @@ class VoiceAssistant:
         """停止语音助手"""
         self.running = False
         self.listening = False
+        self.llama_cli.stop()
         print("语音助手已停止")
         #self.speak("语音助手已停止")
 
 
     ### QA相关函数 ###
-    def generate_answer(self, user_input, retrieved_answer):
-        """结合知识库答案 + 生成式模型生成最终回答"""
-        prompt = f"用户提问: {user_input}\n相关知识: {retrieved_answer}\n请用简洁友好的语气回答。"
-
+    def generate_answer2(self, user_input, retrieved_answer):
+        """结合知识库答案 + llama.cpp 生成最终回答"""
+        prompt = f"你是一只阿尔茨海默病患者的辅助治疗机器狗，你的名字是小影。\n用户提问: {user_input}\n参考回答: {retrieved_answer}\n请用简洁友好的语气回答。<think> </think>"
+        #prompt = f"用户提问:{user_input}\n请用简洁准确的方式回答这个问题。只需要给出核心答案，不需要解释或扩展。<think> </think>"
+        print("prompt:",prompt)
         if self.use_online:
-            # 示例：调用 DeepSeek API（你需要替换成实际的API调用方式）
+            # 在线 deepseek API（保持不变）
             try:
                 resp = requests.post(
                     "https://api.deepseek.com/v1/chat/completions",
@@ -542,28 +566,22 @@ class VoiceAssistant:
                 return retrieved_answer
         else:
             # 本地调用 qwen3 (示例，用 transformers pipeline)
-            from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-
-            model_id = "assets/Qwen3-0.6B-GPTQ-Int8"  # 你的本地路径
-
-            tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-            model = AutoModelForCausalLM.from_pretrained(
-                model_id,
-                device_map="auto",
-                trust_remote_code=True
-            )
-
             self._local_pipe = pipeline(
                 "text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                device_map="auto"
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device_map="auto",
+                # 添加以下关键参数
+                max_new_tokens=20,  # 控制生成文本的最大长度
+                do_sample=True,     # 启用采样，与temperature和top_p配合使用
+                eos_token_id=self.tokenizer.eos_token_id,  # 设置结束符，帮助模型正确断句
+                pad_token_id=self.tokenizer.eos_token_id   # 某些模型可能需要设置pad_token
             )
-            result = self._local_pipe(prompt, max_new_tokens=100)
+            result = self._local_pipe(prompt, max_new_tokens=50)
+            print(result)
+            return result[0]["generated_text"]
             return result[0]["generated_text"].replace(prompt, "").strip()
-    
     ### QA相关函数结束 ###
-    
 # 使用示例
 if __name__ == "__main__":
     import sys
@@ -581,6 +599,23 @@ if __name__ == "__main__":
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager)
     
+    ###
+    while True:
+        text = input("你说: ")
+        if text.lower() in ["exit", "quit"]:
+            break
+
+        answer, score = assistant.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer}")
+
+        # 交给生成式模型润色
+        final_answer=answer
+        #final_answer = assistant.generate_answer2(text, answer)
+        print(f"最终回答: {final_answer}")
+
+    assistant.stop()
+
+    ###
     # 测试音频增强功能
     assistant.test_enhancement()
     

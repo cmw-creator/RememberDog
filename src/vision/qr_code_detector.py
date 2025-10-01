@@ -122,9 +122,9 @@ class QRCodeDetector:
                 time.sleep(0.1)
                 continue
             if self.frame_count % self.frame_skip != 0:
-                time.sleep(0.01)
+                time.sleep(0.02)
                 continue  # 跳过部分帧以降低计算负载
-                
+            #print("self.frame_count:",self.frame_count)    
             
 
             # 识别二维码/条形码
@@ -162,6 +162,9 @@ class QRCodeDetector:
             
         # 释放资源
         cv2.destroyAllWindows()
+    def run(self):
+        qr_thread = threading.Thread(target=self.run_detection, name="QR_Detector")
+        qr_thread.start()
 
 
 if __name__ == '__main__':

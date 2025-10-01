@@ -9,3 +9,5 @@ tokenizer.json
 #测试生成的语言
 test_enhanced.wav
 test_raw.wav
+#压缩包
+*.zip

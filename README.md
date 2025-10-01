@@ -1,134 +1,77 @@
-## 应用场景
-
-一个基于绝影lite3机器狗的奥兹海默患者陪伴犬
-
-症状：
-
-- **轻度**：近事遗忘（如忘记约定）、语言障碍（找词困难）、判断力下降，生活尚能自理
-- **中度**：远/近期记忆均严重受损，定向障碍（迷路）、情绪异常（焦虑、幻觉），需他人照料
-- **重度**：完全丧失记忆和自理能力。
-
-项目目的：辅助解决遗忘问题，帮助恢复生活状态
-
-## 机器狗已经有的硬件和功能：
-
-1.带有陀螺仪加速度计，行走距离传感器，有扬声器，增加usb麦克风。
-
-2.带有广角相机一台，深度相机一台
-
-4.带有英伟达 nvidia xavier nx计算板，增加usb无线网卡可以连网。
-
-4.ros 1 环境
-
-## 实现的功能：
-
-#### **辅助记忆**
-
-**特定物品**：
-
-1.人脸、场景照片、二维码和条形码识别
-
-​    实现方案：dlib（人脸识别），场景照片（SIFT特征检测算法），二维码条形码（pyzbar库）
-
-​    目的：识别亲人与陌生人，帮助记忆亲人。
-
-​				识别曾经去过的地点照片，带有任务的旅游照片，讲述照片背后故事并帮助记忆。
-
-​                通过物品、药品自带的条形码，说出相关信息，帮助认别物品，服药。二维码可以帮助没有自带条形码的情况（打印贴上）。
-
-2.根据识别内容，将要说的文字转语音，并且可发出熟悉人的声音，唤醒情景记忆。
-
-​	实现方案：GPT-SoVITS项目，可用录制的特定人的语音进行训练，可推理出特定人的声音。
-
-​    例：将人物照片放在狗前                 回复：人物关系/人物往事（以儿女邻居等的语气说）
-
-​    例：将所拍的风景照放在狗前         回复：与景物相关的往事
-
-​    例：将贴有二维码的药瓶放在狗前 回复：什么药+服用时间
-
-**对话功能**
-
-1.构建问答的数据，使用Sentence-BERT (MiniLM)模型进行文本转向量，作为机器狗的记忆。
-
-2.当接受到用户的语音时，利用vosk转为文本，然后通过FAISS 最近邻搜索记忆 → 返回最相关一个或多个 Q&A。
-
-3.将相关Q&A和特定指令作为prompt,交给本地低参数量生成式ai大模型qwen3或使用在线大模型(有网时，例如deepseek-v3)生成最终回答，并说出来
-
-​	例：我的大女儿是什么时候出生的？ 答：2005年xx月xx日，属鸡，昨天她来看过你呢
-
-​	例：下午要干什么事？                        答：今天下午5点需要xxx，我会提醒你的
-
-**主动的对话**
-
-1.随机问答触发
-
-​    机器狗定时（如每日固定时段）主动邀请与患者互动，提问患者，问题基于机器狗的记忆。
-
-2.定时提醒
-
-​    2.1定时用药提醒：提供语音播报
-
-​    2.2定时事件提醒
-
-​        例：明天下午提醒我做什么事。 
-
-​    
-
-#### **带运动的陪伴**
-
-~~1.识别手势动作，完成“过来，走开等”的功能~~，先不搞了
-
-​     ~~该功能效果不行，如果没有gpu很慢。~~
-
-2.利用MediaPipe Pose等算法，检测人所在的位置，主动看向，走进患者
-
-3.配合对话，做出摇头，点头等动作
-
-4.识别特定指令，完成前进后退等动作
-
-#### **环境感知与安全监护**
-
-1.环境信息采集：采集环境视频音频，向亲人远程报告异常情况（异常噪声，呼救，跌倒...）
-
-​	实现方案：YAMNet，可识别报警器报警，重物落地等声音；结合对话功能，可识别呼救；结合MediaPipe Pose可实现跌倒检测。
-
-2.长时间不活动报警
-
-​	长时间没有与患者互动，如整整一天没有和患者说话，报告异常
-
-#### **远程监护与控制**
-
-1.远程查看功能，可以让在外的亲人实时控制机器狗并且查看内容（考虑远程场景，可能涉及手机app开发）
-
-2.网页/app管理机器狗问答记忆等数据
-
-
-
-~~以下暂不实现：~~
-
-~~1.跟随功能，如果要外出，可实现跟随功能？~~
-
-~~2.增加usb gps模块，实现定位功能？~~
-
-~~3.智能家居支持？~~
-
-~~4.识别易摔倒，易磕碰的地方并发出预警？~~
-
-
-
-## 功能演示
-
-
-
-## **参考项目**
-
-[ligen131/remember-me： 帮助阿尔兹海默症患者回忆过往与记录生活。](https://github.com/ligen131/remember-me)利用在线ai的往事记忆储存检索的方案
-
-[coneypo/Dlib_face_recognition_from_camera：人脸识别](https://github.com/coneypo/Dlib_face_recognition_from_camera)
-
-[RVC-Boss/GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)文字转语音
-
-[XIAN-HHappy/handpose_x: 手部21个关键点检测，二维手势姿态，手势识别](https://github.com/XIAN-HHappy/handpose_x?tab=readme-ov-file)
-
-
-
+from vision.camera_manager  import  CameraManager
+from vision.qr_code_detector  import  QRCodeDetector
+from vision.face_detector  import  FaceDetector
+#from vision.photo_detector  import  PhotoDetector
+#from vision.hand_pose_estimator import HandPoseEstimator
+#from speech.voice_assistant import VoiceAssistant
+from memory.memory_manager import MemoryManager 
+#from speech.speech_engine import SpeechEngine
+import threading
+import time
+
+from memory.qa_manager import QAManager
+
+def main():
+    # 创建记忆管理器
+    memory_manager = MemoryManager()
+    #创建语音引擎
+    #speech_engine = SpeechEngine(memory_manager)
+
+    # 创建摄像头管理器
+    cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+    #cam_manager = CameraManager(0) #在自己笔记本上测试
+    cam_manager.start()
+
+    # 创建检测器
+    qr_detector = QRCodeDetector(cam_manager,memory_manager)
+    face_detector=FaceDetector(cam_manager,memory_manager)
+    #photo_detector=PhotoDetector(cam_manager,memory_manager)
+    # 创建手部姿态检测器
+    '''
+    hand_estimator = HandPoseEstimator(
+        cam_manager,
+        memory_manager,
+        model_path="./assets/handpose_x/weights/squeezenet1_1-size-256-loss-0.0732.pth",   #轻量模型
+        model='squeezenet1_1',
+        num_classes=42,
+        GPUS='0',
+        img_size=(256, 256)
+    )
+    '''
+    #voice_assistant = VoiceAssistant(memory_manager)
+    
+
+    # 注册模块状态
+    memory_manager.update_module_status("QRCodeDetector", "initialized")
+    memory_manager.update_module_status("FaceDetector", "initialized")
+    memory_manager.update_module_status("PhotoDetector", "initialized")
+    memory_manager.update_module_status("HandPoseEstimator", "initialized")
+    memory_manager.update_module_status("VoiceAssistant", "initialized")
+    qr_detector.run()
+
+    # 为每个检测器创建单独的线程
+    qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
+    face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
+    #photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
+    #hand_thread = threading.Thread(target=hand_estimator.run_estimation, name="Hand_Pose_Estimator")
+    
+    # 启动所有线程
+    #qr_thread.start()
+    face_thread.start()
+    #photo_thread.start()
+    #hand_thread.start()
+    #memory_manager.start()#内部创造线程了
+    #voice_assistant.start()#内部创造线程了
+
+    # 更新模块状态为运行中
+    memory_manager.update_module_status("QRCodeDetector", "running")
+    memory_manager.update_module_status("FaceDetector", "running")
+    memory_manager.update_module_status("PhotoDetector", "running")
+    memory_manager.update_module_status("HandPoseEstimator", "running")
+    memory_manager.update_module_status("VoiceAssistant", "running")
+    memory_manager.update_module_status("MemoryManager", "running")
+    memory_manager.update_module_status("SpeechEventHandler", "running")
+    
+if __name__ == '__main__':
+    main()
+    time.sleep(10000)
