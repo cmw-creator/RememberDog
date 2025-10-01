@@ -1,93 +1,68 @@
+# enhanced_noise_detector_smart.py
 import numpy as np
 import threading
 import queue
 import time
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # 禁用 GPU
+import sys
+import pyaudio
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import tensorflow as tf
 
-print("TensorFlow 版本:", tf.__version__)
-print("可用设备:", tf.config.list_physical_devices())
 
 class EnhancedNoiseDetectorYamnet:
-    """基于YAMNet的增强噪声检测器"""
+    """智能版本的YAMNet噪音检测器 - 区分正常和异常声音"""
 
-    def __init__(self, memory_manager, sensitivity=0.3, model_path=None):
+    def __init__(self, memory_manager, sensitivity=0.3, model_path=None, device_index=None):
         self.memory_manager = memory_manager
-        self.sensitivity = sensitivity
+        self.sensitivity = sensitivity  # 提高灵敏度，避免误报
+        self.device_index = device_index
         self.running = False
 
         # 音频参数
         self.sample_rate = 16000
         self.chunk_size = 1024
-
-        # 音频队列
         self.audio_queue = queue.Queue()
 
-        # 延迟导入YAMNet相关模块
+        # YAMNet要求至少0.975秒的音频（15600个样本）
+        self.required_samples = 15600
+        self.audio_buffer = np.array([], dtype=np.float32)
+
+        # 模型组件
         self.model = None
         self.params = None
         self.class_names = None
 
+        # 统计和状态
+        self.chunk_count = 0
+        self.last_buffer_size = 0
+        self.normal_sound_count = 0
+        self.abnormal_sound_count = 0
+        self.last_event_time = 0
+        self.event_cooldown = 5  # 事件冷却时间（秒）
+
+        print("🔧 初始化智能YAMNet噪音检测器...")
+
         # 初始化YAMNet模型
-        self._init_yamnet_model(model_path)
-
-        # 噪声类型映射到我们的分类
-        self.noise_mapping = {
-            'Dog': 'dog_bark',
-            'Bark': 'dog_bark',
-            'Howl': 'dog_bark',
-            'Baby cry, infant cry': 'baby_cry',
-            'Crying, sobbing': 'crying',
-            'Whimper': 'crying',
-            'Glass': 'glass_break',
-            'Breaking': 'glass_break',
-            'Crash': 'impact',
-            'Explosion': 'impact',
-            'Slam': 'impact',
-            'Thump': 'impact',
-            'Bang': 'impact',
-            'Alarm': 'alarm_sound',
-            'Siren': 'alarm_sound',
-            'Emergency vehicle': 'alarm_sound',
-            'Screaming': 'high_pitch',
-            'Yell': 'high_pitch',
-            'Shout': 'high_pitch',
-            'Groan': 'moaning_crying',
-            'Moan': 'moaning_crying',
-            'Whine': 'moaning_crying'
-        }
-
-        # 风险级别映射
-        self.risk_levels = {
-            'dog_bark': 'low',
-            'baby_cry': 'medium',
-            'crying': 'medium',
-            'glass_break': 'high',
-            'impact': 'high',
-            'alarm_sound': 'critical',
-            'high_pitch': 'medium',
-            'moaning_crying': 'high'
-        }
-
-        print("YAMNet噪声检测器初始化完成")
+        if self._init_yamnet_model(model_path):
+            print("✅ 智能YAMNet噪音检测器初始化完成")
+            self.model_available = True
+        else:
+            print("❌ YAMNet噪音检测器初始化失败")
+            self.model_available = False
 
     def _init_yamnet_model(self, model_path):
         """初始化YAMNet模型"""
         try:
-            # 方法1：直接导入当前目录的YAMNet模块
-            import sys
-            import os
+            print("🔄 步骤1: 准备YAMNet环境...")
 
-            # 获取当前文件所在目录的绝对路径
             current_dir = os.path.dirname(os.path.abspath(__file__))
-
-            # 尝试多种可能的YAMNet路径
             possible_paths = [
-                os.path.join(current_dir, "yamnet"),  # 同级目录下的yamnet文件夹
-                os.path.join(current_dir, "..", "yamnet"),  # 上级目录的yamnet文件夹
-                "E:/RememberDog/assets/voice_models/yamnet",  # 绝对路径
-                "assets/voice_models/yamnet",  # 相对路径
+                os.path.join(current_dir, "yamnet"),
+                os.path.join(current_dir, "..", "yamnet"),
+                "E:/RememberDog/assets/voice_models/yamnet",
+                "assets/voice_models/yamnet",
             ]
 
             yamnet_dir = None
@@ -100,31 +75,26 @@ class EnhancedNoiseDetectorYamnet:
                 print("❌ 未找到YAMNet模块目录")
                 return False
 
-            # 添加到Python路径
             if yamnet_dir not in sys.path:
                 sys.path.insert(0, yamnet_dir)
 
-            # 设置模型路径
             if model_path is None:
                 model_path = os.path.join(yamnet_dir, "yamnet.h5")
 
             if not os.path.exists(model_path):
                 print(f"❌ 模型文件不存在: {model_path}")
-                # 尝试其他可能的模型路径
-                model_path = self._find_model_file(yamnet_dir)
-                if not model_path:
-                    return False
+                return False
 
-            # 动态导入YAMNet模块
-            from params import Params
+            print("🔄 步骤2: 导入YAMNet模块...")
+            from assets.voice_models.yamnet.params import Params
             import yamnet as yamnet_model
 
-            # 初始化参数和模型
+            print("🔄 步骤3: 初始化参数和模型...")
             self.params = Params()
             self.model = yamnet_model.yamnet_frames_model(self.params)
             self.model.load_weights(model_path)
 
-            # 加载类别名称
+            print("🔄 步骤4: 加载类别名称...")
             class_map_path = os.path.join(yamnet_dir, "yamnet_class_map.csv")
             if os.path.exists(class_map_path):
                 self.class_names = yamnet_model.class_names(class_map_path)
@@ -132,36 +102,17 @@ class EnhancedNoiseDetectorYamnet:
                 self.class_names = self._get_default_class_names()
 
             print(f"✅ YAMNet模型加载成功: {model_path}")
+            print(f"   类别数量: {len(self.class_names)}")
             return True
 
-        except ImportError as e:
-            print(f"❌ 导入YAMNet模块失败: {e}")
-            print("Python路径:", sys.path)
-            return False
         except Exception as e:
             print(f"❌ YAMNet模型初始化失败: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
-    def _find_model_file(self, base_dir):
-        """查找模型文件"""
-        possible_locations = [
-            "yamnet.h5",
-            "model.h5",
-            "assets/voice_models/yamnet/yamnet.h5",
-            "E:/RememberDog/assets/voice_models/yamnet/yamnet.h5",
-        ]
-
-        for location in possible_locations:
-            full_path = os.path.join(base_dir, location) if not os.path.isabs(location) else location
-            if os.path.exists(full_path):
-                print(f"✅ 找到模型文件: {full_path}")
-                return full_path
-
-        print("❌ 未找到模型文件，请下载YAMNet模型")
-        return None
     def _get_default_class_names(self):
-        """获取默认的类别名称"""
-        # 这里是YAMNet的521个类别的简化版本
+        """获取完整的类别名称"""
         return np.array([
             'Speech', 'Child speech, kid speaking', 'Conversation', 'Narration, monologue',
             'Babbling', 'Speech synthesizer', 'Shout', 'Bellow', 'Whoop', 'Yell',
@@ -225,6 +176,135 @@ class EnhancedNoiseDetectorYamnet:
             'Ring', 'Buzz', 'Hum', 'Whir', 'Screech', 'Rattle', 'Vibration', 'Silence'
         ])
 
+    def is_normal_human_activity(self, yamnet_class):
+        """判断是否为正常人类活动声音"""
+        normal_activities = [
+            'Speech', 'Child speech', 'Conversation', 'Narration', 'Babbling',
+            'Whispering', 'Laughter', 'Baby laughter', 'Giggle', 'Snicker',
+            'Belly laugh', 'Chuckle', 'Chortle', 'Singing', 'Choir', 'Yodeling',
+            'Chant', 'Mantra', 'Child singing', 'Rapping', 'Humming',
+            'Breathing', 'Snoring', 'Gasp', 'Pant', 'Snort', 'Cough',
+            'Throat clearing', 'Sneeze', 'Sniff', 'Chatter', 'Crowd',
+            'Hubbub', 'Cheering', 'Applause'
+        ]
+
+        yamnet_class_lower = yamnet_class.lower()
+        for activity in normal_activities:
+            if activity.lower() in yamnet_class_lower:
+                return True
+        return False
+
+    def is_abnormal_noise(self, yamnet_class, energy):
+        """判断是否为真正的异常噪音"""
+        # 首先排除正常人类活动
+        if self.is_normal_human_activity(yamnet_class):
+            return False
+
+        # 异常噪音类型
+        abnormal_noises = [
+            'Glass', 'Breaking', 'Crash', 'Explosion', 'Slam', 'Thump', 'Bang',
+            'Alarm', 'Siren', 'Emergency vehicle', 'Screaming', 'Yell', 'Shout',
+            'Baby cry', 'Crying', 'Sobbing', 'Whimper', 'Wail', 'Moan',
+            'Gunshot', 'Fireworks', 'Firecracker', 'Burst', 'Eruption', 'Boom'
+        ]
+
+        yamnet_class_lower = yamnet_class.lower()
+        for noise in abnormal_noises:
+            if noise.lower() in yamnet_class_lower:
+                # 对于某些噪音，需要足够的能量才认为是异常
+                if noise.lower() in ['slam', 'thump', 'bang'] and energy < 50:
+                    return False
+                return True
+
+        return False
+
+    def process_audio_chunk(self, audio_chunk):
+        """处理音频块 - 智能区分正常和异常声音"""
+        try:
+            # 转换为numpy数组
+            audio_data = np.frombuffer(audio_chunk, dtype=np.int16)
+
+            # 计算原始能量
+            raw_energy = np.sqrt(np.mean(np.square(audio_data.astype(np.float64))))
+
+            # 转换为YAMNet需要的格式并归一化
+            audio_data_float = audio_data.astype(np.float32) / 32768.0
+
+            # 累积音频数据
+            self.audio_buffer = np.concatenate([self.audio_buffer, audio_data_float])
+
+            # 更新计数器
+            self.chunk_count += 1
+
+            # 显示累积进度
+            buffer_length = len(self.audio_buffer)
+            if buffer_length != self.last_buffer_size and self.chunk_count % 10 == 0:
+                required_ratio = buffer_length / self.required_samples
+                energy_level = "🔇" if raw_energy < 10 else "🔈" if raw_energy < 50 else "🔉" if raw_energy < 100 else "🔊"
+                print(
+                    f"{energy_level} 音频缓冲区: {buffer_length}/{self.required_samples} 样本 ({required_ratio:.1%}) - 能量: {raw_energy:.1f}")
+                self.last_buffer_size = buffer_length
+
+            # 只有当累积了足够长的音频时才进行分类
+            if buffer_length >= self.required_samples:
+                # 取出足够长度的音频进行分类
+                classification_audio = self.audio_buffer[:self.required_samples]
+
+                # 保留剩余音频在缓冲区中（滑动窗口）
+                keep_samples = buffer_length - self.chunk_size
+                if keep_samples > 0:
+                    self.audio_buffer = self.audio_buffer[-keep_samples:]
+                else:
+                    self.audio_buffer = np.array([], dtype=np.float32)
+
+                # 使用YAMNet分类
+                yamnet_class, confidence = self.classify_audio(classification_audio)
+
+                current_time = time.time()
+
+                # 显示检测结果
+                if yamnet_class and confidence > 0.1:
+                    if yamnet_class == "Silence":
+                        if self.chunk_count % 30 == 0:  # 减少静音显示频率
+                            print(f"🔇 环境静音 - 置信度: {confidence:.3f}")
+                    elif self.is_normal_human_activity(yamnet_class):
+                        self.normal_sound_count += 1
+                        if self.normal_sound_count % 5 == 0:  # 减少正常声音显示频率
+                            print(f"💬 正常活动: {yamnet_class:<25} 置信度: {confidence:.3f}")
+                    else:
+                        print(f"🔊 环境声音: {yamnet_class:<25} 置信度: {confidence:.3f}")
+
+                # 异常检测逻辑 - 只在检测到真正的异常噪音时触发
+                if (confidence > self.sensitivity and
+                        yamnet_class != "Silence" and
+                        self.is_abnormal_noise(yamnet_class, raw_energy) and
+                        (current_time - self.last_event_time) > self.event_cooldown):
+
+                    noise_type, risk_level = self.map_to_noise_type(yamnet_class, raw_energy)
+                    self.abnormal_sound_count += 1
+                    self.last_event_time = current_time
+
+                    print(f"🚨 检测到异常噪音: {yamnet_class} -> {noise_type}")
+                    print(f"   置信度: {confidence:.3f}, 风险: {risk_level}, 能量: {raw_energy:.1f}")
+
+                    # 触发事件
+                    event_data = {
+                        "noise_type": noise_type,
+                        "risk_level": risk_level,
+                        "confidence": float(confidence),
+                        "yamnet_class": yamnet_class,
+                        "energy": float(raw_energy),
+                        "timestamp": current_time
+                    }
+
+                    if risk_level in ["high", "critical"]:
+                        self.memory_manager.trigger_event("urgent_noise_alert", event_data)
+                    else:
+                        self.memory_manager.trigger_event("abnormal_noise_detected", event_data)
+
+        except Exception as e:
+            print(f"处理音频块错误: {e}")
+
     def classify_audio(self, audio_data):
         """使用YAMNet对音频进行分类"""
         if self.model is None or self.class_names is None:
@@ -236,12 +316,10 @@ class EnhancedNoiseDetectorYamnet:
                 audio_data = audio_data.astype(np.float32)
 
             # 确保音频长度合适
-            if len(audio_data) < self.sample_rate * 0.5:  # 至少0.5秒
-                # 填充音频到最小长度
-                target_length = int(self.sample_rate * 0.5)
-                if len(audio_data) < target_length:
-                    padding = target_length - len(audio_data)
-                    audio_data = np.pad(audio_data, (0, padding), mode='constant')
+            current_length = len(audio_data)
+            if current_length < self.required_samples:
+                padding = self.required_samples - current_length
+                audio_data = np.pad(audio_data, (0, padding), mode='constant')
 
             # 使用YAMNet进行预测
             scores, embeddings, spectrogram = self.model(audio_data)
@@ -260,84 +338,83 @@ class EnhancedNoiseDetectorYamnet:
             print(f"音频分类错误: {e}")
             return None, 0
 
-    def map_to_noise_type(self, yamnet_class):
-        """将YAMNet类别映射到我们的噪声类型"""
+    def map_to_noise_type(self, yamnet_class, energy):
+        """将YAMNet类别映射到噪声类型和风险级别"""
         if yamnet_class is None:
             return "unknown", "low"
 
         yamnet_class_lower = yamnet_class.lower()
 
+        # 噪声类型映射
+        noise_mapping = {
+            'Glass': 'glass_break',
+            'Breaking': 'glass_break',
+            'Crash': 'impact',
+            'Explosion': 'impact',
+            'Slam': 'impact',
+            'Thump': 'impact',
+            'Bang': 'impact',
+            'Alarm': 'alarm_sound',
+            'Siren': 'alarm_sound',
+            'Emergency vehicle': 'alarm_sound',
+            'Screaming': 'high_pitch',
+            'Yell': 'high_pitch',
+            'Shout': 'high_pitch',
+            'Baby cry': 'baby_cry',
+            'Crying': 'crying',
+            'Sobbing': 'crying',
+            'Whimper': 'crying',
+            'Wail': 'crying',
+            'Moan': 'moaning_crying',
+            'Gunshot': 'gunshot',
+            'Fireworks': 'explosion',
+            'Firecracker': 'explosion'
+        }
+
+        # 基础风险级别
+        base_risk_levels = {
+            'glass_break': 'high',
+            'impact': 'high',
+            'alarm_sound': 'critical',
+            'high_pitch': 'medium',
+            'baby_cry': 'medium',
+            'crying': 'medium',
+            'moaning_crying': 'high',
+            'gunshot': 'critical',
+            'explosion': 'high'
+        }
+
         # 检查映射
-        for key, value in self.noise_mapping.items():
+        for key, value in noise_mapping.items():
             if key.lower() in yamnet_class_lower:
-                risk_level = self.risk_levels.get(value, "low")
-                return value, risk_level
+                base_risk = base_risk_levels.get(value, "medium")
+                # 根据能量调整风险级别
+                if energy > 100 and base_risk != "critical":
+                    return value, "high"
+                return value, base_risk
 
-        # 默认映射
         return "unknown", "low"
-
-    def process_audio_chunk(self, audio_chunk):
-        """处理音频块"""
-        try:
-            print(f"接收音频块，长度: {len(audio_chunk)}字节")  # 新增调试日志
-            # 转换为numpy数组
-            audio_data = np.frombuffer(audio_chunk, dtype=np.int16)
-            audio_data = audio_data.astype(np.float32) / 32768.0  # 转换为[-1, 1]
-
-            # 使用YAMNet分类
-            yamnet_class, confidence = self.classify_audio(audio_data)
-
-            if confidence > self.sensitivity and yamnet_class != "Silence":
-                # 映射到我们的噪声类型
-                noise_type, risk_level = self.map_to_noise_type(yamnet_class)
-
-                print(f"检测到噪声: {yamnet_class} -> {noise_type}, 置信度: {confidence:.3f}, 风险: {risk_level}")
-
-                # 触发事件
-                event_data = {
-                    "noise_type": noise_type,
-                    "risk_level": risk_level,
-                    "confidence": float(confidence),
-                    "yamnet_class": yamnet_class,
-                    "timestamp": time.time()
-                }
-
-                # 根据风险级别触发不同事件
-                if risk_level in ["high", "critical"]:
-                    self.memory_manager.trigger_event("urgent_noise_alert", event_data)
-                else:
-                    self.memory_manager.trigger_event("abnormal_noise_detected", event_data)
-
-        except Exception as e:
-            print(f"处理音频块错误: {e}")
 
     def _processing_loop(self):
         """处理循环"""
+        print("🔄 启动智能音频处理循环...")
         while self.running:
             try:
-                if not self.audio_queue.empty():
-                    audio_chunk = self.audio_queue.get(timeout=0.1)
-                    self.process_audio_chunk(audio_chunk)
-                    self.audio_queue.task_done()
-                else:
-                    time.sleep(0.01)
+                audio_chunk = self.audio_queue.get(timeout=0.5)
+                self.process_audio_chunk(audio_chunk)
+                self.audio_queue.task_done()
             except queue.Empty:
-                time.sleep(0.01)
+                continue
             except Exception as e:
                 print(f"处理循环错误: {e}")
                 time.sleep(0.1)
 
-    def add_audio_data(self, audio_data):
-        """添加音频数据到处理队列"""
-        if self.running and self.model is not None:
-            self.audio_queue.put(audio_data)
-        """添加音频数据到处理队列"""
-        if self.running and self.model is not None:
-            self.audio_queue.put(audio_data)
-            # 新增日志：验证数据是否入队
-            print(f"音频数据入队，当前队列大小: {self.audio_queue.qsize()}")
-        else:
-            print("噪声检测器未运行或模型未加载，无法接收音频数据")
+    def audio_callback(self, in_data, frame_count, time_info, status):
+        """音频回调函数"""
+        if self.running and in_data is not None and len(in_data) > 0:
+            self.audio_queue.put(in_data)
+        return (in_data, pyaudio.paContinue)
+
     def start(self):
         """启动检测器"""
         if self.model is None:
@@ -345,15 +422,61 @@ class EnhancedNoiseDetectorYamnet:
             return False
 
         self.running = True
+
+        try:
+            self.audio = pyaudio.PyAudio()
+
+            # 打开音频流
+            self.stream = self.audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=self.sample_rate,
+                input=True,
+                frames_per_buffer=self.chunk_size,
+                stream_callback=self.audio_callback,
+                input_device_index=self.device_index
+            )
+
+            self.stream.start_stream()
+            print("✅ 音频流启动成功")
+
+        except Exception as e:
+            print(f"❌ 启动音频流失败: {e}")
+            self.running = False
+            return False
+
+        # 启动处理线程
         self.processing_thread = threading.Thread(target=self._processing_loop)
         self.processing_thread.daemon = True
         self.processing_thread.start()
-        print("YAMNet噪声检测器已启动")
+
+        print("✅ 智能YAMNet噪声检测器已启动 - 只检测真正的异常噪音")
         return True
 
     def stop(self):
         """停止检测器"""
+        print("🛑 停止噪声检测器...")
         self.running = False
+
+        if hasattr(self, 'stream') and self.stream:
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except:
+                pass
+
+        if hasattr(self, 'audio') and self.audio:
+            try:
+                self.audio.terminate()
+            except:
+                pass
+
         if hasattr(self, 'processing_thread') and self.processing_thread.is_alive():
             self.processing_thread.join(timeout=1.0)
-        print("YAMNet噪声检测器已停止")
+
+        # 输出统计信息
+        print(f"📊 检测统计:")
+        print(f"   总音频块: {self.chunk_count}")
+        print(f"   正常活动检测: {self.normal_sound_count}")
+        print(f"   异常噪音检测: {self.abnormal_sound_count}")
+        print("✅ 智能YAMNet噪声检测器已停止")
