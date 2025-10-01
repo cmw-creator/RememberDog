@@ -11,17 +11,19 @@ import time
 
 from memory.qa_manager import QAManager
 
+
+
+# 创建摄像头管理器
+cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+    
+#cam_manager = CameraManager(0) #在自己笔记本上测试
+cam_manager.start()
+
 def main():
     # 创建记忆管理器
     memory_manager = MemoryManager()
     #创建语音引擎
     #speech_engine = SpeechEngine(memory_manager)
-
-    # 创建摄像头管理器
-    cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
-    
-    #cam_manager = CameraManager(0) #在自己笔记本上测试
-    cam_manager.start()
 
     # 创建检测器
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
@@ -48,9 +50,9 @@ def main():
     memory_manager.update_module_status("PhotoDetector", "initialized")
     memory_manager.update_module_status("HandPoseEstimator", "initialized")
     memory_manager.update_module_status("VoiceAssistant", "initialized")
-    qr_detector.run()
 
     # 为每个检测器创建单独的线程
+    #qr_detector.run()
     qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
     face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
     photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")

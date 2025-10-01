@@ -32,7 +32,7 @@ class PhotoDetector:
         self.thread = None
 
         # 性能优化
-        self.frame_skip = 20  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 60  # 如果为2，则每3帧处理1帧
         self.frame_count = 0
 
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳

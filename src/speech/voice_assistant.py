@@ -60,10 +60,10 @@ class VoiceAssistant:
         self.commands_db = self.load_commands_db()
         
         # 初始化噪声配置文件
-        #self.initialize_noise_profile()
+        self.initialize_noise_profile()
         
         # 启动音频质量监控
-        #self.start_quality_monitor()
+        self.start_quality_monitor()
 
 
         # 初始化 Q&A 管理器，之后建议放在记忆管理器中
@@ -239,7 +239,6 @@ class VoiceAssistant:
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
-                        input_device_index=self.device_index,
                         rate=self.hw_rate,
                         input=True,
                         frames_per_buffer=self.chunk)
@@ -367,7 +366,6 @@ class VoiceAssistant:
         stream = p.open(format=self.format,
                         channels=self.channels,
                         rate=self.hw_rate,
-                        input_device_index=self.device_index,
                         input=True,
                         frames_per_buffer=self.chunk)
 
