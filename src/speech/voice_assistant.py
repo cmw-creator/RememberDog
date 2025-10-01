@@ -11,11 +11,12 @@ import re
 import numpy as np
 import wave
 import pyaudio
-import pyttsx3
+#import pyttsx3
 from vosk import Model, KaldiRecognizer
 import noisereduce as nr
 from scipy import signal
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from scipy.signal import resample
 
 
 
@@ -31,23 +32,25 @@ class VoiceAssistant:
         self.chunk = 4096
         self.format = pyaudio.paInt16
         self.channels = 1
-        self.rate = 16000
+        self.device_index = 0
+        self.hw_rate = 16000   # 硬件录音采样率（麦克风一般支持）
+        self.rate = 16000      # 语音识别采样率
         
         # 音频增强参数
         self.noise_profile = None
         self.noise_profile_length = 2.0  # 用于噪声分析的秒数
-        self.agc_factor = 5.0  # 自动增益因子
+        self.agc_factor = 10.0  # 自动增益因子
         self.noise_reduction_enabled = True
         self.agc_enabled = True
-        self.noise_gate_threshold = 0.05  # 噪声门限阈值
+        self.noise_gate_threshold = 0.02  # 噪声门限阈值
         
         # 初始化语音识别
         self.setup_voice_recognition()
         
         # 初始化语音合成
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)
-        self.engine.setProperty('volume', 0.9)
+        #self.engine = pyttsx3.init()
+        #self.engine.setProperty('rate', 150)
+        #self.engine.setProperty('volume', 0.9)
         
         # 运行状态
         self.running = True
@@ -57,10 +60,10 @@ class VoiceAssistant:
         self.commands_db = self.load_commands_db()
         
         # 初始化噪声配置文件
-        self.initialize_noise_profile()
+        #self.initialize_noise_profile()
         
         # 启动音频质量监控
-        self.start_quality_monitor()
+        #self.start_quality_monitor()
 
 
         # 初始化 Q&A 管理器，之后建议放在记忆管理器中
@@ -181,7 +184,7 @@ class VoiceAssistant:
             gain = target_rms / rms
             
             # 限制最大增益以避免失真
-            max_gain = 5.0
+            max_gain = 10.0
             gain = min(gain, max_gain)
             
             # 应用增益
@@ -236,7 +239,8 @@ class VoiceAssistant:
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
-                        rate=self.rate,
+                        input_device_index=self.device_index,
+                        rate=self.hw_rate,
                         input=True,
                         frames_per_buffer=self.chunk)
         
@@ -293,6 +297,12 @@ class VoiceAssistant:
         return enhanced_audio
     ### 音频增强和降噪结束 ###
 
+
+    def downsample_to_16k(self, audio_bytes):
+        x48 = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
+        # 48k -> 16k (down=3)
+        y16 = resample_poly(x48, up=1, down=3)
+        return (y16.astype(np.int16)).tobytes()
     def test_speech_recognition(self):
         """测试语音识别功能"""
         print("测试语音识别功能...")
@@ -314,8 +324,10 @@ class VoiceAssistant:
             # 应用音频增强（如果有的话）
             enhanced_audio = self.apply_audio_enhancement(raw_audio)
 
-            # 使用增强后的音频进行语音识别
+            #audio_data_16k = self.downsample_to_16k(enhanced_audio)
             recognized_text = self.recognize_speech_offline(enhanced_audio)
+            # 使用增强后的音频进行语音识别
+            #recognized_text = self.recognize_speech_offline(enhanced_audio)
 
             if recognized_text:
                 print(f"识别结果: {recognized_text}")
@@ -354,7 +366,8 @@ class VoiceAssistant:
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
-                        rate=self.rate,
+                        rate=self.hw_rate,
+                        input_device_index=self.device_index,
                         input=True,
                         frames_per_buffer=self.chunk)
 
@@ -362,7 +375,7 @@ class VoiceAssistant:
 
         # --- 可调参数（降低敏感度） ---
         silence_timeout = 1.2  # 句尾静音超时（秒），越大越不易截断
-        rms_voice_threshold = 250  # 能量阈值（int16 RMS），越大越不敏感
+        rms_voice_threshold = 50  # 能量阈值（int16 RMS），越大越不敏感
         min_utter_duration = 0.60  # 一句话最短时长（秒），短于此不立刻结算
         ema_alpha = 0.2  # RMS 指数平滑系数（0~1），越小越平滑
         # ---------------------------
@@ -375,7 +388,7 @@ class VoiceAssistant:
 
         # 辅助：保存 wav
         def _save_wav(b, idx, tag=""):
-            name = f"enhanced_segment_{idx}{tag}.wav"
+            name = f"log/enhanced_segment_{idx}{tag}.wav"
             with wave.open(name, 'wb') as wf:
                 wf.setnchannels(self.channels)
                 wf.setsampwidth(p.get_sample_size(self.format))
@@ -389,7 +402,9 @@ class VoiceAssistant:
                 continue
 
             try:
-                raw = stream.read(self.chunk, exception_on_overflow=False)
+                raw = stream.read(self.chunk)
+
+                
                 enhanced = self.apply_audio_enhancement(raw)
 
                 # 累积增强后的音频到当前句
@@ -599,8 +614,9 @@ class VoiceAssistant:
     def speak(self, text):
         """语音合成[1,2,3](@ref)"""
         def run():
-            self.engine.say(text)
-            self.engine.runAndWait()
+            print("说话：",text)
+            #self.engine.say(text)
+            #self.engine.runAndWait()
         threading.Thread(target=run).start()
     
     def speak_random(self, texts):
@@ -695,7 +711,7 @@ if __name__ == "__main__":
     assistant = VoiceAssistant(memory_manager)
 
     ###
-    
+    '''
     while True:
         text = input("你说: ")
         if text.lower() in ["exit", "quit"]:
@@ -710,7 +726,7 @@ if __name__ == "__main__":
         print(f"最终回答: {final_answer}")
 
     assistant.stop()
-    
+    '''
     ###
     # 测试音频增强功能
     # assistant.test_enhancement()

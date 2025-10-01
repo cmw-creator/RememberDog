@@ -1,9 +1,9 @@
 from vision.camera_manager  import  CameraManager
 from vision.qr_code_detector  import  QRCodeDetector
 from vision.face_detector  import  FaceDetector
-#from vision.photo_detector  import  PhotoDetector
+from vision.photo_detector  import  PhotoDetector
 #from vision.hand_pose_estimator import HandPoseEstimator
-#from speech.voice_assistant import VoiceAssistant
+from speech.voice_assistant import VoiceAssistant
 from memory.memory_manager import MemoryManager 
 #from speech.speech_engine import SpeechEngine
 import threading
@@ -19,13 +19,14 @@ def main():
 
     # 创建摄像头管理器
     cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+    
     #cam_manager = CameraManager(0) #在自己笔记本上测试
     cam_manager.start()
 
     # 创建检测器
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
     face_detector=FaceDetector(cam_manager,memory_manager)
-    #photo_detector=PhotoDetector(cam_manager,memory_manager)
+    photo_detector=PhotoDetector(cam_manager,memory_manager)
     # 创建手部姿态检测器
     '''
     hand_estimator = HandPoseEstimator(
@@ -38,7 +39,7 @@ def main():
         img_size=(256, 256)
     )
     '''
-    #voice_assistant = VoiceAssistant(memory_manager)
+    voice_assistant = VoiceAssistant(memory_manager)
     
 
     # 注册模块状态
@@ -52,16 +53,16 @@ def main():
     # 为每个检测器创建单独的线程
     qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
     face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
-    #photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
+    photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
     #hand_thread = threading.Thread(target=hand_estimator.run_estimation, name="Hand_Pose_Estimator")
     
     # 启动所有线程
-    #qr_thread.start()
+    qr_thread.start()
     face_thread.start()
-    #photo_thread.start()
+    photo_thread.start()
     #hand_thread.start()
-    #memory_manager.start()#内部创造线程了
-    #voice_assistant.start()#内部创造线程了
+    memory_manager.start()#内部创造线程了
+    voice_assistant.start()#内部创造线程了
 
     # 更新模块状态为运行中
     memory_manager.update_module_status("QRCodeDetector", "running")

@@ -10,6 +10,7 @@ from pyzbar.pyzbar import decode
 from PIL import Image
 import pyttsx3  # 离线TTS引擎
 import threading
+import json
 
 class QRCodeDetector:
     def __init__(self, camera_manager, memory_manager):
@@ -20,21 +21,9 @@ class QRCodeDetector:
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)  # 语速调节
         
-        # 存储识别的编码数据（药瓶二维码->语音映射），现在先写在这，以后读取文件获取
-        self.medical_db = {
-            "med_00001": "降压药，每日早饭后服用1粒",
-            "med_00002": "维生素D，每日中饭后服用2粒",
-            "med_00003": "降糖药，每日早餐前服用1粒，晚餐前服用1粒",
-            "med_00004": "心脏保健药，每日早晚各服用1粒",
-            "med_00005": "钙片，每日睡前服用2粒",
-            "med_00006": "胃药，每日三餐前服用1粒",
-            "med_00007": "安眠药，每日睡前服用半粒",
-            "med_00008": "消炎药，每日三次，每次1粒，饭后服用",
-            "med_00009": "感冒药，感觉不适时服用1粒，每日不超过3粒",
-            "med_00010": "止痛药，疼痛时服用1粒，每6小时不超过1粒",
-            "med_00011": "抗过敏药，每日早晨服用1粒",
-            "med_00012": "保健品鱼油，每日随餐服用2粒"
-        }
+        # 存储识别的编码数据（药瓶二维码->语音映射）
+        with open('assets/qr_code_info.json', 'r', encoding='utf-8') as f:
+            self.medical_db = json.load(f)
         
         # 异步语音线程控制
         self.speaking = False
