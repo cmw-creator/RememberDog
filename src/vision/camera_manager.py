@@ -1,5 +1,6 @@
 import cv2
 import threading
+import time 
 
 class CameraManager:
     def __init__(self, camera_id=0, width=800, height=600):
@@ -37,12 +38,16 @@ class CameraManager:
     def _capture_frames(self):
         """内部方法：持续捕获帧"""
         while self.running:
-            ret, frame = self.camera.read()
+            for _ in range(4):  # 清空缓冲区的帧数，可根据实际情况调整
+                self.camera.grab()  # 抓取帧但不解码[2](@ref)
+            ret, frame = self.camera.retrieve()
             cv2.imshow('Camera:', frame)
             cv2.waitKey(1)
             if ret:
                 with self.frame_lock:
                     self.current_frame = frame.copy()
+            time.sleep(0.1)
+            
     
     def get_frame(self):
         """获取当前帧的副本"""
