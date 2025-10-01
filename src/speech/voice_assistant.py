@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import wave
 # 本地语音助手 - 集成降噪和自动增益控制
+from pyrnnoise import RNNoise
+from scipy.signal import resample_poly  # 高质量有理数重采样
 import threading
 import json
 import time
@@ -63,20 +66,8 @@ class VoiceAssistant:
         # 初始化 Q&A 管理器，之后建议放在记忆管理器中
         self.qa_manager = memory_manager.qa_manager
         self.use_online = False   # True: 在线 deepseek / False: 本地 qwen3
+        self.rnnoise = RNNoise(sample_rate=48000)  # RNNoise 按 48kHz 工作
 
-        #self.llama_cli = LlamaCLI(r"C:\soft\develop\llama.cpp\llama-cli.exe"
-        #                          , r"C:\Users\wcm\.lmstudio\models\Qwen\Qwen3-0.6B-GGUF\Qwen3-0.6B-Q8_0.gguf")
-
-        self.model_id = "assets/Qwen3-0.6B"  # 你的本地路径
-
-        '''
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            device_map="auto",
-            trust_remote_code=True
-        )
-        '''
         
     def setup_voice_recognition(self):
         """设置本地语音识别"""
@@ -114,45 +105,67 @@ class VoiceAssistant:
         except Exception as e:
             print(f"噪声样本采集失败: {str(e)}")
             self.noise_profile = None
-    
+
     def apply_audio_enhancement(self, audio_data):
         """
-        应用音频增强处理：降噪 + 自动增益控制[6,7](@ref)
+        RNNoise 前端降噪 + 平滑 AGC + 噪声门
+        - 入口：int16 bytes @ 16kHz
+        - 内部：上采样到 48kHz，送 RNNoise（10ms 帧，480 样本/帧）
+        - 出口：再下采样回 16kHz，按你原有流程做 AGC 与噪声门
         """
-        # 转换为numpy数组并归一化
-        audio_np = np.frombuffer(audio_data, dtype=np.int16)
-        audio_float = audio_np.astype(np.float32) / 32768.0
-        
-        # 应用降噪
-        if self.noise_reduction_enabled and self.noise_profile is not None and len(audio_float) > 0:
-            try:
-                # 使用noisereduce库进行降噪[7](@ref)
-                reduced_noise = nr.reduce_noise(
-                    y=audio_float, 
-                    sr=self.rate, 
-                    y_noise=self.noise_profile,
-                    prop_decrease=0.8,  # 噪声减少比例
-                    n_fft=1024,
-                    hop_length=256
-                )
-                audio_float = reduced_noise
-            except Exception as e:
-                print(f"降噪处理错误: {str(e)}")
-        
-        # 应用自动增益控制 (AGC)
-        if self.agc_enabled and len(audio_float) > 0:
-            audio_float = self.apply_agc(audio_float)
-        
-        # 应用噪声门限
-        if len(audio_float) > 0:
-            rms = np.sqrt(np.mean(audio_float**2))
+        if not audio_data:
+            return audio_data
+
+        # --- bytes -> int16 ndarray ---
+        x16 = np.frombuffer(audio_data, dtype=np.int16)
+        if x16.size == 0:
+            return audio_data
+
+        # --- 上采样到 48kHz（16k -> 48k = 1:3 upsample）---
+        # 用 resample_poly 提升质量和稳定性
+        x48 = resample_poly(x16.astype(np.float32), up=3, down=1).astype(np.int16)
+
+        # --- 组帧并送入 RNNoise ---
+        # RNNoise 的 Python API 支持一次性 chunk：shape [channels, samples]，int16
+        # 你是单声道 -> [1, N]
+        try:
+            mono48 = x48.reshape(1, -1).astype(np.int16)
+            denoised_frames = []
+
+            # 逐帧产出：denoise_chunk 会按 480 样本帧返回
+            for speech_prob, denoised in self.rnnoise.denoise_chunk(mono48):
+                # denoised: shape [1, 480] int16
+                denoised_frames.append(denoised[0])
+
+            if denoised_frames:
+                x48_denoised = np.concatenate(denoised_frames).astype(np.int16)
+            else:
+                x48_denoised = x48  # 回退
+        except Exception as e:
+            print(f"RNNoise 降噪失败，回退到原始音频：{e}")
+            x48_denoised = x48
+
+        # --- 下采样回 16kHz（48k -> 16k = 3:1 downsample）---
+        y16 = resample_poly(x48_denoised.astype(np.float32), up=1, down=3)
+
+        # --- 转 float 做后续处理 ---
+        y = (y16 / 32768.0).astype(np.float32)
+        y = np.nan_to_num(y, nan=0.0, posinf=1.0, neginf=-1.0)
+
+        # --- 你的 AGC（沿用原有实现） ---
+        if self.agc_enabled and y.size > 0:
+            y = self.apply_agc(y)
+
+        # --- 噪声门（沿用你的全段 RMS，但建议后续替换成滞回门限/VAD）---
+        if y.size > 0:
+            rms = float(np.sqrt(max(1e-12, np.mean(y ** 2))))
             if rms < self.noise_gate_threshold:
-                # 低于阈值，认为是噪声，静音处理
-                audio_float = np.zeros_like(audio_float)
-        
-        # 转换回16位整数格式
-        enhanced_audio = (audio_float * 32767.0).astype(np.int16)
-        return enhanced_audio.tobytes()
+                y[:] = 0.0
+
+        # --- 回写 int16 bytes ---
+        y = np.clip(y, -1.0, 1.0)
+        out16 = (y * 32767.0).astype(np.int16)
+        return out16.tobytes()
     
     def apply_agc(self, audio_data):
         """应用自动增益控制"""
@@ -280,8 +293,36 @@ class VoiceAssistant:
         return enhanced_audio
     ### 音频增强和降噪结束 ###
 
+    def test_speech_recognition(self):
+        """测试语音识别功能"""
+        print("测试语音识别功能...")
 
+        # 录制音频并进行识别
+        try:
+            # 录制一段原始音频
+            raw_audio = self.record_audio(duration=3)
+            print("原始音频录制完成，开始识别...")
 
+            # 保存原始音频到本地
+            with wave.open("test_raw_audio.wav", 'wb') as f:
+                f.setnchannels(self.channels)
+                f.setsampwidth(pyaudio.PyAudio().get_sample_size(self.format))
+                f.setframerate(self.rate)
+                f.writeframes(raw_audio)
+            print("原始音频已保存为 test_raw_audio.wav")
+
+            # 应用音频增强（如果有的话）
+            enhanced_audio = self.apply_audio_enhancement(raw_audio)
+
+            # 使用增强后的音频进行语音识别
+            recognized_text = self.recognize_speech_offline(enhanced_audio)
+
+            if recognized_text:
+                print(f"识别结果: {recognized_text}")
+            else:
+                print("未能识别语音内容")
+        except Exception as e:
+            print(f"语音识别测试失败: {str(e)}")
     ### 语音识别 ###
     def recognize_speech_offline(self, audio_data):
         """使用本地模型识别语音"""
@@ -307,64 +348,114 @@ class VoiceAssistant:
         except Exception as e:
             print(f"语音识别错误: {str(e)}")
             return None
-    
+
     def run_listen(self):
-        """持续监听语音指令"""
+        """持续监听语音指令（AcceptWaveform 分段，低敏版）"""
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
                         rate=self.rate,
                         input=True,
                         frames_per_buffer=self.chunk)
-        
+
         print("语音助手已启动，等待指令...")
-        
-        # 创建缓冲区用于存储连续的音频数据
-        audio_buffer = bytes()
-        buffer_duration = 1  # 缓冲0.5秒音频
-        buffer_size = int(self.rate * buffer_duration * 2)  # 16位 = 2字节
-        
+
+        # --- 可调参数（降低敏感度） ---
+        silence_timeout = 1.2  # 句尾静音超时（秒），越大越不易截断
+        rms_voice_threshold = 250  # 能量阈值（int16 RMS），越大越不敏感
+        min_utter_duration = 0.60  # 一句话最短时长（秒），短于此不立刻结算
+        ema_alpha = 0.2  # RMS 指数平滑系数（0~1），越小越平滑
+        # ---------------------------
+
+        self.recognizer.Reset()
+        audio_index = 1
+        utter_buf = bytearray()
+        last_voice_ts = time.time()
+        smoothed_rms = 0.0
+
+        # 辅助：保存 wav
+        def _save_wav(b, idx, tag=""):
+            name = f"enhanced_segment_{idx}{tag}.wav"
+            with wave.open(name, 'wb') as wf:
+                wf.setnchannels(self.channels)
+                wf.setsampwidth(p.get_sample_size(self.format))
+                wf.setframerate(self.rate)
+                wf.writeframes(b)
+            print(f"已保存分段音频: {name}")
+
         while self.running:
-            # 启用终端输入代替语音识别测试 #
-            if True:
-                text=input("测试：请输入要说的话：")
-                self.process_command(text)
+            if not self.listening:
+                time.sleep(0.05)
                 continue
 
-            if not self.listening:
-                time.sleep(0.1)
-                continue
-                
             try:
-                # 读取音频数据
-                data = stream.read(self.chunk, exception_on_overflow=False)
-                
-                # 添加到缓冲区
-                audio_buffer += data
-                
-                # 当缓冲区有足够数据时进行处理
-                if len(audio_buffer) >= buffer_size:
-                    # 应用音频增强
-                    enhanced_audio = self.apply_audio_enhancement(audio_buffer)
-                    
-                    # 使用增强后的音频进行识别
-                    text = self.recognize_speech_offline(enhanced_audio)
-                    
-                    if text and len(text.strip()) > 0:
+                raw = stream.read(self.chunk, exception_on_overflow=False)
+                enhanced = self.apply_audio_enhancement(raw)
+
+                # 累积增强后的音频到当前句
+                if enhanced:
+                    utter_buf += enhanced
+
+                # 计算平滑 RMS（为空则当 0）
+                if len(enhanced) > 0:
+                    arr = np.frombuffer(enhanced, dtype=np.int16)
+                    # 防 NaN
+                    if arr.size == 0:
+                        inst_rms = 0.0
+                    else:
+                        inst_rms = float(np.sqrt(max(1e-12, np.mean(arr.astype(np.float32) ** 2))))
+                    smoothed_rms = (1 - ema_alpha) * smoothed_rms + ema_alpha * inst_rms
+                    if smoothed_rms > rms_voice_threshold:
+                        last_voice_ts = time.time()
+
+                # 计算当前句已累积时长
+                utt_dur = len(utter_buf) / (2 * self.rate)  # 2 字节/样本，单声道
+
+                # 1) 首选：由 Vosk 判断一句话结束
+                accepted = self.recognizer.AcceptWaveform(enhanced) if len(enhanced) > 0 else False
+                if accepted and utt_dur >= min_utter_duration:
+                    text = json.loads(self.recognizer.Result()).get("text", "").strip()
+
+                    if len(utter_buf) > 0:
+                        _save_wav(utter_buf, audio_index)
+                        audio_index += 1
+
+                    if text:
                         print(f"识别结果: {text}")
                         self.process_command(text)
-                    
-                    # 清空缓冲区
-                    audio_buffer = bytes()
-                    
+
+                    utter_buf = bytearray()
+                    self.recognizer.Reset()
+                    last_voice_ts = time.time()
+                    continue  # 进入下一轮
+
+                # 2) 兜底：句尾静音超时（防止迟迟不结束或被截断）
+                if (time.time() - last_voice_ts) > silence_timeout and len(utter_buf) > 0:
+                    # 仅当满足最短句时长才结算，避免半句被截断
+                    if utt_dur >= min_utter_duration:
+                        final_text = json.loads(self.recognizer.FinalResult()).get("text", "").strip()
+
+                        _save_wav(utter_buf, audio_index, tag="_timeout")
+                        audio_index += 1
+
+                        if final_text:
+                            print(f"识别结果(超时结算): {final_text}")
+                            self.process_command(final_text)
+
+                    # 无论是否输出文本，都重置缓冲，避免越积越多
+                    utter_buf = bytearray()
+                    self.recognizer.Reset()
+                    smoothed_rms = 0.0
+                    last_voice_ts = time.time()
+
             except Exception as e:
                 print(f"语音处理错误: {str(e)}")
-                audio_buffer = bytes()  # 发生错误时清空缓冲区
-        
+                utter_buf = bytearray()  # 出错时清空当前句缓存
+
         stream.stop_stream()
         stream.close()
         p.terminate()
-    
+
     def process_command(self, text):
         """处理语音命令"""
         # 首先检查问候语
@@ -393,7 +484,10 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer=answer
-        #final_answer = self.generate_answer2(text, answer)
+
+        # final_answer = self.generate_answer(text, answer)
+
+
         print(f"最终回答: {final_answer}")
         #self.speak(final_answer)
     
@@ -585,20 +679,21 @@ class VoiceAssistant:
 # 使用示例
 if __name__ == "__main__":
     import sys
-    # 添加项目根目录到Python路径
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)
     sys.path.append(project_root)
 
-    from vision.camera_manager  import  CameraManager
+    from vision.camera_manager import CameraManager
     from memory.memory_manager import MemoryManager
     from memory.qa_manager import QAManager
 
     memory_manager = MemoryManager()
-    qa_manager     = QAManager()
+    qa_manager = QAManager()
+
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager)
-    
+
     ###
     while True:
         text = input("你说: ")
@@ -617,11 +712,11 @@ if __name__ == "__main__":
 
     ###
     # 测试音频增强功能
-    assistant.test_enhancement()
+    # assistant.test_enhancement()
     
     # 启动语音助手
     assistant.start()
-    
+
     # 运行一段时间
     try:
         while True:
