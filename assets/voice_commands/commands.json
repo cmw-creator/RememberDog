@@ -31,6 +31,10 @@
     {
       "pattern": "帮助",
       "action": "help"
+    },
+    {
+      "pattern": "我要去",
+      "action": "goto"
     }
   ],
   "responses": {

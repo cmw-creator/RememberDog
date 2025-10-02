@@ -17,6 +17,7 @@ import noisereduce as nr
 from scipy import signal
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from scipy.signal import resample
+from control import nav_client
 
 
 
@@ -518,6 +519,10 @@ class VoiceAssistant:
             print("开始监听")
         elif action == "help":
             print("发出声音：我可以帮您添加提醒、设置问题、控制机器狗行动")
+        elif action == "goto":
+            print("开始导航去XXX")
+            pass #这里写真的导航
+            nav_client.go_to(1.0, 2.0, 0.0)
         else:
             print(f"执行命令: {action}")
     ### 语音识别结束 ###
