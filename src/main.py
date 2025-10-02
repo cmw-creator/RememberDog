@@ -14,9 +14,9 @@ from memory.qa_manager import QAManager
 
 
 # 创建摄像头管理器
-#cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
     
-cam_manager = CameraManager(0) #在自己笔记本上测试
+#cam_manager = CameraManager(0) #在自己笔记本上测试
 cam_manager.start()
 
 def main():

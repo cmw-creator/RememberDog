@@ -17,7 +17,7 @@ import noisereduce as nr
 from scipy import signal
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from scipy.signal import resample
-from control import nav_client
+#from control import nav_client
 
 
 
@@ -498,7 +498,13 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer=answer
-
+        # 触发语音事件，兼容 speak_text / audio_file
+        event_payload = {
+            "speak_text": final_answer,
+            "timestamp": time.time(),
+            "audio_file":""
+        }
+        self.memory_manager.trigger_event("speak_event", event_payload)
         # final_answer = self.generate_answer(text, answer)
 
 
@@ -706,9 +712,12 @@ if __name__ == "__main__":
     from vision.camera_manager import CameraManager
     from memory.memory_manager import MemoryManager
     from memory.qa_manager import QAManager
+    from speech.speech_engine import SpeechEngine
 
     memory_manager = MemoryManager()
     qa_manager = QAManager()
+    #创建语音引擎
+    speech_engine = SpeechEngine(memory_manager)
 
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager)
