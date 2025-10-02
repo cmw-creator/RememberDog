@@ -126,25 +126,39 @@ class FaceDetector:
                     cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     cv2.putText(cv_image, match_name, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-                    if match_name!="unknown":
+                    if match_name != "unknown":
                         if self.should_process_qr(match_name):
+                            speak_text = "数据库里没有该人的故事信息"
+                            audio_file = None
+
                             if match_name in self.face_db:
-                                speak_text=self.face_db[match_name]
-                            else:
-                                speak_text="数据库里没有该人的故事信息"
-                            # 通过记忆管理器共享信息
+                                face_info = self.face_db[match_name]
+                                if isinstance(face_info, dict):  
+                                    # 新格式：有可能包含 speak_text 和 audio_file
+                                    speak_text = face_info.get("description", speak_text)
+                                    audio_file = face_info.get("audio_file", None)
+                                else:
+                                    # 兼容旧格式：直接是文本
+                                    speak_text = str(face_info)
+
                             print(f"发送识别到: {match_name} (可信度: {1 - min_distance:.2f})")
                             self.memory_manager.set_shared_data(
                                 "last_recognized_face", 
                                 {"name": match_name, "confidence": 1 - min_distance},
                                 "FaceDetector"
                             )
-                            self.memory_manager.trigger_event("speak_event", {
+
+                            # 发送给语音事件处理器
+                            event_payload = {
                                 "name": match_name,
                                 "confidence": 1 - min_distance,
                                 "speak_text": speak_text,
                                 "timestamp": time.time()
-                            })
+                            }
+                            if audio_file:   # 如果有音频文件则一并发过去
+                                event_payload["audio_file"] = audio_file
+
+                            self.memory_manager.trigger_event("speak_event", event_payload)
                     time.sleep(1)#防止一直识别成功
 
                 # 清理过期的记录

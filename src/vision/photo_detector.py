@@ -216,19 +216,34 @@ class PhotoDetector:
                     print(f"发送匹配信息: {match_result['name']} ({match_result['match_count']} points)")
                     
                     if photo_name in self.photo_db:
-                        speak_text=self.photo_db[photo_name]
+                        entry = self.photo_db[photo_name]
+                        # 兼容旧格式（字符串）
+                        if isinstance(entry, str):
+                            speak_text = entry
+                            audio_file = None
+                        elif isinstance(entry, dict):
+                            speak_text = entry.get("description", "数据库里没有该图片的故事信息哦")
+                            audio_file = entry.get("audio_file", None)
+                        else:
+                            speak_text = "数据库数据格式错误"
+                            audio_file = None
                     else:
-                        speak_text="数据库里没有该图片的故事信息"
+                        speak_text = "数据库里没有该图片的故事信息"
+                        audio_file = None
+
                     # 通过记忆管理器共享信息
                     self.memory_manager.set_shared_data(
                         "last_matched_scene",
                         {"photo_name": photo_name, "score": score},
                         "PhotoDetector"
                     )
+
+                    # 触发语音事件（带 audio_file）
                     self.memory_manager.trigger_event("speak_event", {
                         "photo_name": photo_name,
                         "score": score,
                         "speak_text": speak_text,
+                        "audio_file": audio_file,
                         "timestamp": time.time()
                     })
                 # 显示匹配点图像

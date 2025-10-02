@@ -430,7 +430,7 @@ class VoiceAssistant:
                     text = json.loads(self.recognizer.Result()).get("text", "").strip()
 
                     if len(utter_buf) > 0:
-                        _save_wav(utter_buf, audio_index)
+                        #_save_wav(utter_buf, audio_index)
                         audio_index += 1
 
                     if text:
@@ -448,7 +448,7 @@ class VoiceAssistant:
                     if utt_dur >= min_utter_duration:
                         final_text = json.loads(self.recognizer.FinalResult()).get("text", "").strip()
 
-                        _save_wav(utter_buf, audio_index, tag="_timeout")
+                        #_save_wav(utter_buf, audio_index, tag="_timeout")
                         audio_index += 1
 
                         if final_text:

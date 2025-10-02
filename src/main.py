@@ -5,7 +5,7 @@ from vision.photo_detector  import  PhotoDetector
 #from vision.hand_pose_estimator import HandPoseEstimator
 from speech.voice_assistant import VoiceAssistant
 from memory.memory_manager import MemoryManager 
-#from speech.speech_engine import SpeechEngine
+from speech.speech_engine import SpeechEngine
 import threading
 import time
 
@@ -14,16 +14,16 @@ from memory.qa_manager import QAManager
 
 
 # 创建摄像头管理器
-cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+#cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
     
-#cam_manager = CameraManager(0) #在自己笔记本上测试
+cam_manager = CameraManager(0) #在自己笔记本上测试
 cam_manager.start()
 
 def main():
     # 创建记忆管理器
     memory_manager = MemoryManager()
     #创建语音引擎
-    #speech_engine = SpeechEngine(memory_manager)
+    speech_engine = SpeechEngine(memory_manager)
 
     # 创建检测器
     qr_detector = QRCodeDetector(cam_manager,memory_manager)

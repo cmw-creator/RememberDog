@@ -87,16 +87,28 @@ class QRCodeDetector:
 
             # 通过记忆管理器共享信息
             self.memory_manager.set_shared_data(
-                    "last_detected_medicine", 
-                    {"name": data, "info": medicine_info},
-                    "QRCodeDetector"
+                "last_detected_medicine",
+                {"name": data, "info": medicine_info},
+                "QRCodeDetector"
             )
-            self.memory_manager.trigger_event("speak_event", {
-                    "medicine": data,
-                    "info": medicine_info,
-                    "speak_text" : medicine_info,
-                    "timestamp": time.time()
-            })
+
+            # 触发语音事件，兼容 speak_text / audio_file
+            event_payload = {
+                "medicine": data,
+                "timestamp": time.time()
+            }
+            if isinstance(medicine_info, dict):
+                # 新版JSON: 包含 speak_text 和 audio_file
+                if "description" in medicine_info:
+                    event_payload["speak_text"] = medicine_info["description"]
+                if "audio_file" in medicine_info:
+                    event_payload["audio_file"] = medicine_info["audio_file"]
+            else:
+                # 兼容旧版: 值就是字符串
+                event_payload["speak_text"] = str(medicine_info)
+
+            self.memory_manager.trigger_event("speak_event", event_payload)
+
         else:
             print(f"未找到该药品信息，请联系家人更新数据库,{data}")
 
