@@ -16,17 +16,17 @@ from memory.qa_manager import QAManager
 robot_controller=RobotController()
 
 # 创建摄像头管理器
-cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+# cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
     
-#cam_manager = CameraManager(0) #在自己笔记本上测试
-cam_manager.start()
+cam_manager = CameraManager(0) #在自己笔记本上测试
+
 
 def main():
     # 创建记忆管理器
     memory_manager = MemoryManager()
     #创建语音引擎
     speech_engine = SpeechEngine(memory_manager)
-
+    cam_manager.start()
     # 创建检测器
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
     face_detector=FaceDetector(cam_manager,memory_manager)
