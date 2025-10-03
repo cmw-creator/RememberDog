@@ -6,12 +6,14 @@ from vision.photo_detector  import  PhotoDetector
 from speech.voice_assistant import VoiceAssistant
 from memory.memory_manager import MemoryManager 
 from speech.speech_engine import SpeechEngine
+from control.control import RobotController
 import threading
 import time
 
 from memory.qa_manager import QAManager
 
-
+#管理机器狗动作
+robot_controller=RobotController()
 
 # 创建摄像头管理器
 cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
@@ -41,7 +43,7 @@ def main():
         img_size=(256, 256)
     )
     '''
-    voice_assistant = VoiceAssistant(memory_manager)
+    voice_assistant = VoiceAssistant(memory_manager,robot_controller)
     
 
     # 注册模块状态
