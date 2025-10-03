@@ -14,20 +14,14 @@ from multiprocessing import Process, Queue as MPQueue
 class SpeechEngine:
     def __init__(self, memory_manager, rate=150, volume=0.9):
         self.memory_manager = memory_manager
-        self.rate = rate
-        self.volume = volume
+        self.engine = pyttsx3.init()
+        self.engine.setProperty('rate', rate)
+        self.engine.setProperty('volume', volume)
+        self.engine.setProperty('voice', 'sit/cmn')
 
-        # 初始化 pygame mixer
-        try:
-            pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
-            pygame.mixer.music.set_volume(volume)
-            print("[音频] pygame mixer 初始化完成")
-        except Exception as e:
-            print(f"[音频] pygame mixer 初始化失败: {e}")
 
-        # === 修改：使用多进程队列 ===
-        self.speech_queue = MPQueue()  # 进程间队列
-        self.is_speaking_flag = MPQueue()  # 用于跨进程共享状态
+        self.speech_queue = queue.Queue()
+        self.is_speaking = False
         self.running = True
 
         # 最近说过的话(改为8条)
@@ -399,22 +393,7 @@ class SpeechEngine:
 
         @app.route("/history")
         def get_history():
-            with self.history_lock:
-                history_copy = self.history.copy()
+            return jsonify({"history": self.history})
 
-            return jsonify({
-                "history": history_copy,
-                "is_speaking": self.is_busy(),
-                "queue_size": self.get_queue_size()
-            })
+        app.run(host="0.0.0.0", port=8080, debug=False)
 
-        # 禁用Flask的日志输出
-        import logging
-        log = logging.getLogger('werkzeug')
-        log.setLevel(logging.ERROR)
-
-        try:
-            app.run(host="0.0.0.0", port=80, debug=False, use_reloader=False)
-        except Exception as e:
-            print(f"[Flask] 启动失败: {e}")
-            print("[Flask] 提示: 端口80可能需要管理员权限,或尝试使用其他端口(如5000)")

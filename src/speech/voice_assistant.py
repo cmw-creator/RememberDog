@@ -468,10 +468,27 @@ class VoiceAssistant:
         if not command_matched:
             self.speak_random(self.commands_db["responses"]["unknown"])
 
-        answer, score = self.qa_manager.query(text, top_k=1, threshold=0.5)
-        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer}")
+        ### QA记忆的相关代码写在这里 ###
+        # 走问答知识库
+        if len(text)<2:
+            pass
+        answer, score, audio_path = self.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path}")
+        if score<0.8: 
+            return 
 
-        final_answer = answer
+        # 交给生成式模型润色
+        final_answer=answer
+        # 触发语音事件，兼容 speak_text / audio_file
+        event_payload = {
+            "speak_text": final_answer,
+            "timestamp": time.time(),
+            "audio_file":audio_path
+        }
+        self.memory_manager.trigger_event("speak_event", event_payload)
+        # final_answer = self.generate_answer(text, answer)
+
+
         print(f"最终回答: {final_answer}")
 
     def execute_action(self, action, text):
@@ -655,6 +672,23 @@ if __name__ == "__main__":
     from memory.memory_manager import MemoryManager
 
     memory_manager = MemoryManager()
+    robot_controller = RobotController()
+    qa_manager = QAManager()
+    #创建语音引擎
+    speech_engine = SpeechEngine(memory_manager)
+
+    # 创建语音助手实例
+    assistant = VoiceAssistant(memory_manager,robot_controller)
+
+    ###
+    '''
+    while True:
+        text = input("你说: ")
+        if text.lower() in ["exit", "quit"]:
+            break
+
+        answer, score = assistant.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer}")
 
     assistant = VoiceAssistant(memory_manager, None)
 
