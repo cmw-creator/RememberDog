@@ -11,18 +11,21 @@ import re
 import numpy as np
 import wave
 import pyaudio
-import pyttsx3
+#import pyttsx3
 from vosk import Model, KaldiRecognizer
 import noisereduce as nr
 from scipy import signal
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from scipy.signal import resample
+#from control import nav_client
 
 
 
 class VoiceAssistant:
-    def __init__(self, memory_manager):
+    def __init__(self, memory_manager,robot_controller):
         # 初始化记忆管理器
         self.memory_manager = memory_manager
+        self.robot_controller = robot_controller
         
         # 语音识别模型路径
         self.model_path = "assets/voice_models/vosk-model-small-cn-0.22"
@@ -31,23 +34,25 @@ class VoiceAssistant:
         self.chunk = 4096
         self.format = pyaudio.paInt16
         self.channels = 1
-        self.rate = 16000
+        self.device_index = 0
+        self.hw_rate = 16000   # 硬件录音采样率（麦克风一般支持）
+        self.rate = 16000      # 语音识别采样率
         
         # 音频增强参数
         self.noise_profile = None
         self.noise_profile_length = 2.0  # 用于噪声分析的秒数
-        self.agc_factor = 5.0  # 自动增益因子
+        self.agc_factor = 10.0  # 自动增益因子
         self.noise_reduction_enabled = True
         self.agc_enabled = True
-        self.noise_gate_threshold = 0.05  # 噪声门限阈值
+        self.noise_gate_threshold = 0.02  # 噪声门限阈值
         
         # 初始化语音识别
         self.setup_voice_recognition()
         
         # 初始化语音合成
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)
-        self.engine.setProperty('volume', 0.9)
+        #self.engine = pyttsx3.init()
+        #self.engine.setProperty('rate', 150)
+        #self.engine.setProperty('volume', 0.9)
         
         # 运行状态
         self.running = True
@@ -181,7 +186,7 @@ class VoiceAssistant:
             gain = target_rms / rms
             
             # 限制最大增益以避免失真
-            max_gain = 5.0
+            max_gain = 10.0
             gain = min(gain, max_gain)
             
             # 应用增益
@@ -236,7 +241,7 @@ class VoiceAssistant:
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
-                        rate=self.rate,
+                        rate=self.hw_rate,
                         input=True,
                         frames_per_buffer=self.chunk)
         
@@ -293,6 +298,12 @@ class VoiceAssistant:
         return enhanced_audio
     ### 音频增强和降噪结束 ###
 
+
+    def downsample_to_16k(self, audio_bytes):
+        x48 = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
+        # 48k -> 16k (down=3)
+        y16 = resample_poly(x48, up=1, down=3)
+        return (y16.astype(np.int16)).tobytes()
     def test_speech_recognition(self):
         """测试语音识别功能"""
         print("测试语音识别功能...")
@@ -314,8 +325,10 @@ class VoiceAssistant:
             # 应用音频增强（如果有的话）
             enhanced_audio = self.apply_audio_enhancement(raw_audio)
 
-            # 使用增强后的音频进行语音识别
+            #audio_data_16k = self.downsample_to_16k(enhanced_audio)
             recognized_text = self.recognize_speech_offline(enhanced_audio)
+            # 使用增强后的音频进行语音识别
+            #recognized_text = self.recognize_speech_offline(enhanced_audio)
 
             if recognized_text:
                 print(f"识别结果: {recognized_text}")
@@ -354,7 +367,7 @@ class VoiceAssistant:
         p = pyaudio.PyAudio()
         stream = p.open(format=self.format,
                         channels=self.channels,
-                        rate=self.rate,
+                        rate=self.hw_rate,
                         input=True,
                         frames_per_buffer=self.chunk)
 
@@ -362,7 +375,7 @@ class VoiceAssistant:
 
         # --- 可调参数（降低敏感度） ---
         silence_timeout = 1.2  # 句尾静音超时（秒），越大越不易截断
-        rms_voice_threshold = 250  # 能量阈值（int16 RMS），越大越不敏感
+        rms_voice_threshold = 50  # 能量阈值（int16 RMS），越大越不敏感
         min_utter_duration = 0.60  # 一句话最短时长（秒），短于此不立刻结算
         ema_alpha = 0.2  # RMS 指数平滑系数（0~1），越小越平滑
         # ---------------------------
@@ -375,7 +388,7 @@ class VoiceAssistant:
 
         # 辅助：保存 wav
         def _save_wav(b, idx, tag=""):
-            name = f"enhanced_segment_{idx}{tag}.wav"
+            name = f"log/enhanced_segment_{idx}{tag}.wav"
             with wave.open(name, 'wb') as wf:
                 wf.setnchannels(self.channels)
                 wf.setsampwidth(p.get_sample_size(self.format))
@@ -389,7 +402,9 @@ class VoiceAssistant:
                 continue
 
             try:
-                raw = stream.read(self.chunk, exception_on_overflow=False)
+                raw = stream.read(self.chunk)
+
+                
                 enhanced = self.apply_audio_enhancement(raw)
 
                 # 累积增强后的音频到当前句
@@ -417,7 +432,7 @@ class VoiceAssistant:
                     text = json.loads(self.recognizer.Result()).get("text", "").strip()
 
                     if len(utter_buf) > 0:
-                        _save_wav(utter_buf, audio_index)
+                        #_save_wav(utter_buf, audio_index)
                         audio_index += 1
 
                     if text:
@@ -435,7 +450,7 @@ class VoiceAssistant:
                     if utt_dur >= min_utter_duration:
                         final_text = json.loads(self.recognizer.FinalResult()).get("text", "").strip()
 
-                        _save_wav(utter_buf, audio_index, tag="_timeout")
+                        #_save_wav(utter_buf, audio_index, tag="_timeout")
                         audio_index += 1
 
                         if final_text:
@@ -484,7 +499,13 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer=answer
-
+        # 触发语音事件，兼容 speak_text / audio_file
+        event_payload = {
+            "speak_text": final_answer,
+            "timestamp": time.time(),
+            "audio_file":""
+        }
+        self.memory_manager.trigger_event("speak_event", event_payload)
         # final_answer = self.generate_answer(text, answer)
 
 
@@ -505,6 +526,14 @@ class VoiceAssistant:
             print("开始监听")
         elif action == "help":
             print("发出声音：我可以帮您添加提醒、设置问题、控制机器狗行动")
+        elif action == "goto":
+            print("开始导航去XXX")
+            pass #这里写真的导航
+            #nav_client.go_to(1.0, 2.0, 0.0)
+        elif action == "come":
+            self.robot_controller.forward(0.3)
+        elif action == "leave":
+            self.robot_controller.back(0.3)
         else:
             print(f"执行命令: {action}")
     ### 语音识别结束 ###
@@ -599,8 +628,9 @@ class VoiceAssistant:
     def speak(self, text):
         """语音合成[1,2,3](@ref)"""
         def run():
-            self.engine.say(text)
-            self.engine.runAndWait()
+            print("说话：",text)
+            #self.engine.say(text)
+            #self.engine.runAndWait()
         threading.Thread(target=run).start()
     
     def speak_random(self, texts):
@@ -687,14 +717,20 @@ if __name__ == "__main__":
     from vision.camera_manager import CameraManager
     from memory.memory_manager import MemoryManager
     from memory.qa_manager import QAManager
+    from speech.speech_engine import SpeechEngine
+    from control.control import RobotController
 
     memory_manager = MemoryManager()
+    robot_controller = RobotController()
     qa_manager = QAManager()
+    #创建语音引擎
+    speech_engine = SpeechEngine(memory_manager)
 
     # 创建语音助手实例
-    assistant = VoiceAssistant(memory_manager)
+    assistant = VoiceAssistant(memory_manage,robot_controllerr)
 
     ###
+    '''
     while True:
         text = input("你说: ")
         if text.lower() in ["exit", "quit"]:
@@ -709,7 +745,7 @@ if __name__ == "__main__":
         print(f"最终回答: {final_answer}")
 
     assistant.stop()
-
+    '''
     ###
     # 测试音频增强功能
     # assistant.test_enhancement()

@@ -6,6 +6,7 @@ import numpy as np
 import os
 import time
 import threading
+import json
 
 class PhotoDetector:
     def __init__(self, camera_manager, memory_manager):
@@ -31,27 +32,15 @@ class PhotoDetector:
         self.thread = None
 
         # 性能优化
-        self.frame_skip = 20  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 60  # 如果为2，则每3帧处理1帧
         self.frame_count = 0
 
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳
         self.cooldown_period = 20  # 冷却时间（秒）
 
-        # 存储识别的编码数据（照片ID->语音映射），现在先写在这，以后读取文件获取
-        self.photo_db = {
-            "photo_00001": "这是您去年在人民英雄纪念碑前的照片。那天是国庆节，您穿着那件深蓝色的外套，戴着您最喜欢的帽子。天气特别好，阳光明媚，您还记得吗？您在那里站了很久，说想起了年轻时候的事情。回来后您还特意把这张照片洗出来放在相册的第一页。",
-            "photo_00002": "这是您七十岁生日时的全家福照片。所有的孩子和孙子们都回来了，大家围着您唱生日歌。您看，大女儿特意从上海赶回来，还带了您最爱吃的蛋糕。小孙子当时才五岁，正调皮地想要抓蛋糕上的奶油呢。这张照片记录了全家团聚的幸福时刻。",
-            "photo_00003": "这是您和老伴金婚纪念日时在西湖边拍的照片。您穿着中山装，老伴穿着红色的旗袍，两人手牵着手站在断桥上。那天湖面上的荷花正好开了，微风拂过，花瓣轻轻摇曳。您说那是你们第五次去西湖，每次去都有不同的回忆。",
-            "photo_00004": "这是您退休时学校同事们为您举办的欢送会照片。您站在讲台前，手里拿着学生们送的鲜花和纪念册。您在教育岗位上工作了整整四十年，培养了一代又一代的学生。很多学生现在都成了各行各业的精英，他们经常回来看望您。",
-            "photo_00005": "这是您第一次抱孙子的照片。您小心翼翼地抱着刚满月的小孙子，脸上洋溢着幸福的笑容。您还记得吗？那天您特别紧张，手都有些发抖，但还是不肯让别人帮忙。小孙子现在都已经上小学了，时间过得真快啊。",
-            "photo_00006": "这是您参加社区书法比赛获得一等奖的作品和照片。您的楷书写得工整有力，评委们都说很有颜真卿的风骨。您从六十岁开始学习书法，每天坚持练习两个小时，这份坚持和毅力真是令人敬佩。",
-            "photo_00007": "这是您和老朋友们在公园下棋的照片。每周二和周四下午，您都会去公园和老张、老李他们下几盘象棋。您最拿手的是用马后炮，经常杀得他们措手不及。这张照片是去年春天拍的，旁边的樱花树开得正盛。",
-            "photo_00008": "这是您全家第一次去北京旅游的照片。站在天安门广场上，您显得特别激动。您说这是您从小的心愿，终于实现了。还记得那天风很大，您的帽子差点被吹走，是小孙子眼疾手快帮您抓住了。",
-            "photo_00009": "这是您六十大寿时拍的正式肖像照。您穿着女儿特意为您定做的唐装，坐在红木椅子上，神态庄重而慈祥。这张照片后来被放大挂在了客厅的正中央，每个来家里的客人都会称赞您的气质好。",
-            "photo_00010": "这是您和大学同学们毕业五十周年聚会的合影。虽然大家都已经白发苍苍，但聚在一起时仿佛又回到了青春年华。您们一起唱起了当年的校歌，很多人都感动得流下了眼泪。这份同窗情谊已经持续了半个多世纪。",
-            "photo_00011": "这是您在家里的阳台上养的花开的照片。您最喜欢那盆君子兰，已经养了十多年了，每年都会开出鲜艳的花朵。您每天早晨起床第一件事就是给它们浇水，说这是您的小花园，看着它们成长就像看着自己的孩子一样。",
-            "photo_00012": "这是您最后一次和母亲一起过春节的照片。那时她已经九十高龄了，但精神很好，还能给您包饺子。您依偎在她身边，就像小时候一样。这张照片特别珍贵，记录了您们母子间最温馨的时刻。"
-        }
+        # 存储识别的编码数据（照片ID->语音映射）
+        with open('assets/photo_info.json', 'r', encoding='utf-8') as f:
+            self.photo_db = json.load(f)
         
     def _create_flann_matcher(self):
         """创建FLANN匹配器"""
@@ -227,19 +216,34 @@ class PhotoDetector:
                     print(f"发送匹配信息: {match_result['name']} ({match_result['match_count']} points)")
                     
                     if photo_name in self.photo_db:
-                        speak_text=self.photo_db[photo_name]
+                        entry = self.photo_db[photo_name]
+                        # 兼容旧格式（字符串）
+                        if isinstance(entry, str):
+                            speak_text = entry
+                            audio_file = None
+                        elif isinstance(entry, dict):
+                            speak_text = entry.get("description", "数据库里没有该图片的故事信息哦")
+                            audio_file = entry.get("audio_file", None)
+                        else:
+                            speak_text = "数据库数据格式错误"
+                            audio_file = None
                     else:
-                        speak_text="数据库里没有该图片的故事信息"
+                        speak_text = "数据库里没有该图片的故事信息"
+                        audio_file = None
+
                     # 通过记忆管理器共享信息
                     self.memory_manager.set_shared_data(
                         "last_matched_scene",
                         {"photo_name": photo_name, "score": score},
                         "PhotoDetector"
                     )
+
+                    # 触发语音事件（带 audio_file）
                     self.memory_manager.trigger_event("speak_event", {
                         "photo_name": photo_name,
                         "score": score,
                         "speak_text": speak_text,
+                        "audio_file": audio_file,
                         "timestamp": time.time()
                     })
                 # 显示匹配点图像
@@ -258,7 +262,7 @@ class PhotoDetector:
             time.sleep(0.1)#减少识别频次
             # 显示摄像头画面
             #cv2.imshow('Camera Feed', frame)
-            cv2.waitKey(1)
+            #cv2.waitKey(1)
             
 if __name__ == '__main__':
     print("图片识别测试")

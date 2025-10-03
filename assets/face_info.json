@@ -1,0 +1,62 @@
+{
+  "face_00001": {
+    "description": "这是你的女儿小芳，她今年30岁了，她在上海工作，前天刚刚来看你呢。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "assets/voice/face/face_00001.wav"
+  },
+  "face_00002": {
+    "description": "这是你的二女儿，她今年28岁，是一名医生，住在北京，每周都会给你打电话。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "assets/voice/face/face_00002.wav"
+  },
+  "face_00003": {
+    "description": "这是你的儿子，他今年35岁，是一名工程师，有两个可爱的孩子，周末经常带他们来看你。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "assets/voice/face/face_00003.wav"
+  },
+  "face_00004": {
+    "description": "这是你的老伴，你们已经一起生活了40年，她最喜欢给你做红烧肉。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00004.mp3"
+  },
+  "face_00005": {
+    "description": "这是你的孙子小宇，他今年8岁，上小学二年级，最喜欢和你下象棋。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00005.mp3"
+  },
+  "face_00006": {
+    "description": "这是你的孙女小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00006.mp3"
+  },
+  "face_00007": {
+    "description": "这是你的好朋友老张，你们是多年的棋友，每周三都会一起下棋。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00007.mp3"
+  },
+  "face_00008": {
+    "description": "这是你的邻居李阿姨，她经常帮你买菜，是你很好的朋友。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00008.mp3"
+  },
+  "face_00009": {
+    "description": "这是你的护工小刘，她每天上午来帮你做家务和陪你去散步。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00009.mp3"
+  },
+  "face_00010": {
+    "description": "这是你的外甥小王，他每个月都会来看你，每次都带你喜欢的水果。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00010.mp3"
+  },
+  "face_00011": {
+    "description": "这是你的堂弟老陈，你们从小一起长大，现在虽然不住在一起，但经常视频聊天。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00011.mp3"
+  },
+  "face_00012": {
+    "description": "这是你的老同事赵老师，你们以前一起教书，退休后还经常一起喝茶聊天。",
+    "update_time": "2025-10-01 17:45:00",
+    "audio_file": "audio/face_00012.mp3"
+  }
+}
