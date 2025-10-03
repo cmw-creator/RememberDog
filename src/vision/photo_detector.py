@@ -20,7 +20,7 @@ class PhotoDetector:
         self.flann = self._create_flann_matcher()
         
         # 匹配参数
-        self.min_match_count = 50  # 最小匹配点数
+        self.min_match_count = 75  # 最小匹配点数
         self.ratio_threshold = 0.7  # Lowe's ratio测试阈值
         
         # 参考图像数据
@@ -252,8 +252,9 @@ class PhotoDetector:
                 time.sleep(1)#防止一直识别成功
             else:
                 # 关闭可能存在的匹配点窗口
-                if cv2.getWindowProperty('Good Matches', cv2.WND_PROP_VISIBLE) >= 1:
-                    cv2.destroyWindow('Good Matches')
+                #if cv2.getWindowProperty('Good Matches', cv2.WND_PROP_VISIBLE) >= 1:
+                #    cv2.destroyWindow('Good Matches')
+                pass
             
             # 清理过期的记录
             if self.frame_count % 60 == 0:  # 每60帧清理一次

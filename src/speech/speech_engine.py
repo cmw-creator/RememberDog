@@ -15,6 +15,8 @@ class SpeechEngine:
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', rate)
         self.engine.setProperty('volume', volume)
+        self.engine.setProperty('voice', 'sit/cmn')
+
 
         self.speech_queue = queue.Queue()
         self.is_speaking = False
@@ -187,5 +189,5 @@ class SpeechEngine:
         def get_history():
             return jsonify({"history": self.history})
 
-        app.run(host="0.0.0.0", port=80, debug=False)
+        app.run(host="0.0.0.0", port=8080, debug=False)
 
