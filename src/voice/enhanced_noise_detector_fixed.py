@@ -1,4 +1,4 @@
-# enhanced_noise_detector_smart.py
+
 import numpy as np
 import threading
 import queue
@@ -6,11 +6,8 @@ import time
 import os
 import sys
 import pyaudio
-
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import tensorflow as tf
-
-
 class EnhancedNoiseDetectorYamnet:
     """智能版本的YAMNet噪音检测器 - 区分正常和异常声音"""
 
