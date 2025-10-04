@@ -494,8 +494,12 @@ class VoiceAssistant:
 
         ### QA记忆的相关代码写在这里 ###
         # 走问答知识库
-        answer, score = self.qa_manager.query(text, top_k=1, threshold=0.5)
-        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer}")
+        if len(text)<2:
+            pass
+        answer, score, audio_path = self.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path}")
+        if score<0.8: 
+            return 
 
         # 交给生成式模型润色
         final_answer=answer
@@ -503,7 +507,7 @@ class VoiceAssistant:
         event_payload = {
             "speak_text": final_answer,
             "timestamp": time.time(),
-            "audio_file":""
+            "audio_file":audio_path
         }
         self.memory_manager.trigger_event("speak_event", event_payload)
         # final_answer = self.generate_answer(text, answer)
@@ -727,7 +731,7 @@ if __name__ == "__main__":
     speech_engine = SpeechEngine(memory_manager)
 
     # 创建语音助手实例
-    assistant = VoiceAssistant(memory_manage,robot_controllerr)
+    assistant = VoiceAssistant(memory_manager,robot_controller)
 
     ###
     '''

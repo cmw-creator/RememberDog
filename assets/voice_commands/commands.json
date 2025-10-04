@@ -39,8 +39,6 @@
   ],
   "responses": {
     "greeting": [
-      "你好",
-      "您好",
       "嗨",
       "hello"
     ],
