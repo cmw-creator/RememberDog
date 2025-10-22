@@ -17,14 +17,15 @@ import noisereduce as nr
 from scipy import signal
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from scipy.signal import resample
-from control import nav_client
+#from control import nav_client
 
 
 
 class VoiceAssistant:
-    def __init__(self, memory_manager):
+    def __init__(self, memory_manager,robot_controller):
         # 初始化记忆管理器
         self.memory_manager = memory_manager
+        self.robot_controller = robot_controller
         
         # 语音识别模型路径
         self.model_path = "assets/voice_models/vosk-model-small-cn-0.22"
@@ -493,12 +494,22 @@ class VoiceAssistant:
 
         ### QA记忆的相关代码写在这里 ###
         # 走问答知识库
-        answer, score = self.qa_manager.query(text, top_k=1, threshold=0.5)
-        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer}")
+        if len(text)<2:
+            pass
+        answer, score, audio_path = self.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path}")
+        if score<0.8: 
+            return 
 
         # 交给生成式模型润色
         final_answer=answer
-
+        # 触发语音事件，兼容 speak_text / audio_file
+        event_payload = {
+            "speak_text": final_answer,
+            "timestamp": time.time(),
+            "audio_file":audio_path
+        }
+        self.memory_manager.trigger_event("speak_event", event_payload)
         # final_answer = self.generate_answer(text, answer)
 
 
@@ -522,7 +533,11 @@ class VoiceAssistant:
         elif action == "goto":
             print("开始导航去XXX")
             pass #这里写真的导航
-            nav_client.go_to(1.0, 2.0, 0.0)
+            #nav_client.go_to(1.0, 2.0, 0.0)
+        elif action == "come":
+            self.robot_controller.forward(0.3)
+        elif action == "leave":
+            self.robot_controller.back(0.3)
         else:
             print(f"执行命令: {action}")
     ### 语音识别结束 ###
@@ -706,12 +721,17 @@ if __name__ == "__main__":
     from vision.camera_manager import CameraManager
     from memory.memory_manager import MemoryManager
     from memory.qa_manager import QAManager
+    from speech.speech_engine import SpeechEngine
+    from control.control import RobotController
 
     memory_manager = MemoryManager()
+    robot_controller = RobotController()
     qa_manager = QAManager()
+    #创建语音引擎
+    speech_engine = SpeechEngine(memory_manager)
 
     # 创建语音助手实例
-    assistant = VoiceAssistant(memory_manager)
+    assistant = VoiceAssistant(memory_manager,robot_controller)
 
     ###
     '''
