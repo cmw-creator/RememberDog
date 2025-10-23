@@ -2,6 +2,7 @@ from vision.camera_manager  import  CameraManager
 from vision.qr_code_detector  import  QRCodeDetector
 from vision.face_detector  import  FaceDetector
 from vision.photo_detector  import  PhotoDetector
+from vision.pose           import FallDetector
 #from vision.hand_pose_estimator import HandPoseEstimator
 from speech.voice_assistant import VoiceAssistant
 from memory.memory_manager import MemoryManager 
@@ -33,6 +34,7 @@ def main():
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
     face_detector=FaceDetector(cam_manager,memory_manager)
     photo_detector=PhotoDetector(cam_manager,memory_manager)
+    fall_detector = FallDetector(cam_manager)
     # 创建手部姿态检测器
     '''
     hand_estimator = HandPoseEstimator(
@@ -52,7 +54,7 @@ def main():
     memory_manager.update_module_status("QRCodeDetector", "initialized")
     memory_manager.update_module_status("FaceDetector", "initialized")
     memory_manager.update_module_status("PhotoDetector", "initialized")
-    memory_manager.update_module_status("HandPoseEstimator", "initialized")
+    #memory_manager.update_module_status("HandPoseEstimator", "initialized")
     memory_manager.update_module_status("VoiceAssistant", "initialized")
 
     # 为每个检测器创建单独的线程
@@ -60,12 +62,14 @@ def main():
     qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
     face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
     photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
+    fall_thread = threading.Thread(target=fall_detector.run, name="Fall_Detector")
     #hand_thread = threading.Thread(target=hand_estimator.run_estimation, name="Hand_Pose_Estimator")
     
     # 启动所有线程
     qr_thread.start()
     face_thread.start()
     photo_thread.start()
+    fall_thread.start()
     #hand_thread.start()
     memory_manager.start()#内部创造线程了
     voice_assistant.start()#内部创造线程了
@@ -74,7 +78,7 @@ def main():
     memory_manager.update_module_status("QRCodeDetector", "running")
     memory_manager.update_module_status("FaceDetector", "running")
     memory_manager.update_module_status("PhotoDetector", "running")
-    memory_manager.update_module_status("HandPoseEstimator", "running")
+    #memory_manager.update_module_status("HandPoseEstimator", "running")
     memory_manager.update_module_status("VoiceAssistant", "running")
     memory_manager.update_module_status("MemoryManager", "running")
     memory_manager.update_module_status("SpeechEventHandler", "running")

@@ -11,14 +11,20 @@ import numpy as np
 import pyaudio
 import pyttsx3
 from vosk import Model, KaldiRecognizer
-from multiprocessing import Process, Queue as MPQueue
+import noisereduce as nr
+from scipy import signal
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from scipy.signal import resample
+#from control import nav_client
+
 
 
 class VoiceAssistant:
-    def __init__(self, memory_manager, robot_controller):
+    def __init__(self, memory_manager,robot_controller):
         # 初始化记忆管理器
         self.memory_manager = memory_manager
         self.robot_controller = robot_controller
+        
         # 语音识别模型路径
         self.model_path = "assets/voice_models/vosk-model-small-cn-0.22"
 
@@ -505,6 +511,14 @@ class VoiceAssistant:
             print("开始监听")
         elif action == "help":
             print("发出声音：我可以帮您添加提醒、设置问题、控制机器狗行动")
+        elif action == "goto":
+            print("开始导航去XXX")
+            pass #这里写真的导航
+            #nav_client.go_to(1.0, 2.0, 0.0)
+        elif action == "come":
+            self.robot_controller.forward(0.3)
+        elif action == "leave":
+            self.robot_controller.back(0.3)
         else:
             print(f"执行命令: {action}")
 
@@ -670,6 +684,9 @@ if __name__ == "__main__":
     sys.path.append(project_root)
 
     from memory.memory_manager import MemoryManager
+    from memory.qa_manager import QAManager
+    from speech.speech_engine import SpeechEngine
+    from control.control import RobotController
 
     memory_manager = MemoryManager()
     robot_controller = RobotController()
