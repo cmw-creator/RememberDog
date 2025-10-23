@@ -29,7 +29,7 @@ class QRCodeDetector:
         self.speaking = False
 
         self.frame_count = 0
-        self.frame_skip = 5  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 10  # 如果为2，则每3帧处理1帧 50ms一帧
         
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳
         self.cooldown_period = 20  # 冷却时间（秒）
@@ -112,55 +112,59 @@ class QRCodeDetector:
         else:
             print(f"未找到该药品信息，请联系家人更新数据库,{data}")
 
+
+    def detection(self):
+        self.frame_count += 1
+        if self.frame_count % self.frame_skip != 0:
+            time.sleep(0.05)
+            return  # 跳过部分帧以降低计算负载
+
+        frame = self.camera_manager.get_frame()
+        if frame is None:
+            time.sleep(0.1)
+            return
+        
+        #print("self.frame_count:",self.frame_count)    
+        
+
+        # 识别二维码/条形码
+        decoded_objects = self.decode_codes(frame)
+        
+        # 处理所有识别到的二维码
+        processed_codes = []
+        for obj in decoded_objects:
+            try:
+                data = obj.data.decode('utf-8')
+                print("识别结果：", data)
+                
+                # 检查是否应该处理这个二维码（防重复机制）
+                if self.should_process_qr(data):
+                    processed_codes.append(data)
+                    # 逻辑处理
+                    if data.startswith("med_"):  # 药瓶二维码
+                        self.handle_medical_qr(data)
+                    elif data.startswith("photo_"):  # 照片条码（示例）
+                        self.speak("识别到老照片，正在加载回忆...")
+                        
+            except Exception as e:
+                print(f"处理二维码时出错: {e}")
+        
+        # 清理过期的记录
+        if self.frame_count % 60 == 0:  # 每30帧清理一次
+            self.cleanup_old_entries()
+            
+        # 显示实时画面（调试用）
+        # cv2.imshow('QR/Barcode Detection', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            return
+            
+        time.sleep(0.1)  # 减少识别频次
+            
     def run_detection(self):
         """主循环：实时识别并处理结果"""
         print("启动条形码和二维码识别")
-
         while True:
-            frame = self.camera_manager.get_frame()
-            self.frame_count += 1
-            if frame is None:
-                time.sleep(0.1)
-                continue
-            if self.frame_count % self.frame_skip != 0:
-                time.sleep(0.02)
-                continue  # 跳过部分帧以降低计算负载
-            #print("self.frame_count:",self.frame_count)    
-            
-
-            # 识别二维码/条形码
-            decoded_objects = self.decode_codes(frame)
-            
-            # 处理所有识别到的二维码
-            processed_codes = []
-            for obj in decoded_objects:
-                try:
-                    data = obj.data.decode('utf-8')
-                    print("识别结果：", data)
-                    
-                    # 检查是否应该处理这个二维码（防重复机制）
-                    if self.should_process_qr(data):
-                        processed_codes.append(data)
-                        # 逻辑处理
-                        if data.startswith("med_"):  # 药瓶二维码
-                            self.handle_medical_qr(data)
-                        elif data.startswith("photo_"):  # 照片条码（示例）
-                            self.speak("识别到老照片，正在加载回忆...")
-                            
-                except Exception as e:
-                    print(f"处理二维码时出错: {e}")
-            
-            # 清理过期的记录
-            if self.frame_count % 60 == 0:  # 每30帧清理一次
-                self.cleanup_old_entries()
-                
-            # 显示实时画面（调试用）
-            # cv2.imshow('QR/Barcode Detection', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-                
-            time.sleep(0.1)  # 减少识别频次
-            
+            self.detection()
         # 释放资源
         cv2.destroyAllWindows()
     def run(self):

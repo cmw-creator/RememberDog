@@ -400,12 +400,17 @@ class VoiceAssistant:
                 continue
 
             try:
-                raw = stream.read(self.chunk, exception_on_overflow=False)
-                enhanced = self.apply_audio_enhancement(raw)
+                raw = stream.read(self.chunk)
+
+                
+                #enhanced = self.apply_audio_enhancement(raw)
+                enhanced = raw
 
                 if enhanced:
                     utter_buf += enhanced
 
+                '''
+                # 计算平滑 RMS（为空则当 0）
                 if len(enhanced) > 0:
                     arr = np.frombuffer(enhanced, dtype=np.int16)
                     if arr.size == 0:
@@ -415,8 +420,9 @@ class VoiceAssistant:
                     smoothed_rms = (1 - ema_alpha) * smoothed_rms + ema_alpha * inst_rms
                     if smoothed_rms > rms_voice_threshold:
                         last_voice_ts = time.time()
-
-                utt_dur = len(utter_buf) / (2 * self.rate)
+                '''
+                # 计算当前句已累积时长
+                utt_dur = len(utter_buf) / (2 * self.rate)  # 2 字节/样本，单声道
 
                 accepted = self.recognizer.AcceptWaveform(enhanced) if len(enhanced) > 0 else False
                 if accepted and utt_dur >= min_utter_duration:
@@ -459,6 +465,10 @@ class VoiceAssistant:
 
     def process_command(self, text):
         """处理语音命令"""
+        text=text.replace(" ", "")#去除所有空格
+        if(text<=3): 
+            return #太少的字就忽略调了
+        # 首先检查问候语
         for greeting in self.commands_db["responses"]["greeting"]:
             if greeting in text:
                 self.speak_random(["你好！", "您好！", "嗨，有什么可以帮您？"])
@@ -480,8 +490,6 @@ class VoiceAssistant:
             pass
         answer, score, audio_path = self.qa_manager.query(text, top_k=1, threshold=0.5)
         print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path}")
-        if score<0.8: 
-            return 
 
         # 交给生成式模型润色
         final_answer=answer

@@ -18,10 +18,9 @@ robot_controller=RobotController()
 
 # 创建摄像头管理器
 
-#cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
+cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
     
-cam_manager = CameraManager(0) #在自己笔记本上测试
-cam_manager.start()
+#cam_manager = CameraManager(0) #在自己笔记本上测试
 
 
 def main():
@@ -34,7 +33,7 @@ def main():
     qr_detector = QRCodeDetector(cam_manager,memory_manager)
     face_detector=FaceDetector(cam_manager,memory_manager)
     photo_detector=PhotoDetector(cam_manager,memory_manager)
-    fall_detector = FallDetector(cam_manager)
+    fall_detector = FallDetector(cam_manager,memory_manager)
     # 创建手部姿态检测器
     '''
     hand_estimator = HandPoseEstimator(
@@ -69,7 +68,7 @@ def main():
     qr_thread.start()
     face_thread.start()
     photo_thread.start()
-    fall_thread.start()
+    #fall_thread.start()
     #hand_thread.start()
     memory_manager.start()#内部创造线程了
     voice_assistant.start()#内部创造线程了
