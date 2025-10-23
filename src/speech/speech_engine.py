@@ -27,7 +27,8 @@ class SpeechEngine:
 
         # 注册事件回调
         self.memory_manager.register_event_callback("speak_event", self.speak_event, "SpeechEventHandler")
-        self.memory_manager.register_event_callback("medicine_detected", self.handle_medicine_event, "SpeechEventHandler")
+        self.memory_manager.register_event_callback("medicine_detected", self.handle_medicine_event,
+                                                    "SpeechEventHandler")
         self.memory_manager.register_event_callback("face_detected", self.handle_face_event, "FaceEventHandler")
         self.memory_manager.register_event_callback("photo_detected", self.handle_photo_event, "FaceEventHandler")
 
@@ -45,20 +46,24 @@ class SpeechEngine:
 
     # ----------------- 事件回调 -----------------
     def speak_event(self, event_data):
+        """普通语音事件 - 低优先级"""
         if event_data:
-            self.add_to_queue(event_data, priority=0)
+            self.add_to_queue(event_data, priority=3)
 
     def handle_medicine_event(self, event_data):
+        """药品检测事件 - 高优先级"""
         if event_data:
-            self.add_to_queue(event_data, priority=2)
+            self.add_to_queue(event_data, priority=1)
 
     def handle_face_event(self, event_data):
+        """人脸检测事件 - 高优先级"""
         if event_data:
-            self.add_to_queue(event_data, priority=2)
+            self.add_to_queue(event_data, priority=1)
 
     def handle_photo_event(self, event_data):
+        """照片检测事件 - 高优先级"""
         if event_data:
-            self.add_to_queue(event_data, priority=2)
+            self.add_to_queue(event_data, priority=1)
 
     # ----------------- 队列管理 -----------------
     def add_to_queue(self, event_data, priority=0):
@@ -77,9 +82,21 @@ class SpeechEngine:
     def _process_speech_queue(self):
         while self.running:
             try:
-                highest_priority = None
-                highest_text = None
-                highest_audio = None
+                # 从队列获取任务
+                try:
+                    priority, text, audio_file = speech_queue.get(timeout=1)
+                except:
+                    continue
+
+                if text is None and audio_file is None:  # 停止信号
+                    print("[TTS进程] 收到退出信号")
+                    break
+
+                # 更新播放状态
+                try:
+                    is_speaking_flag.put(True, block=False)
+                except:
+                    pass
 
                 for _ in range(self.speech_queue.qsize()):
                     try:
@@ -123,11 +140,40 @@ class SpeechEngine:
                 time.sleep(0.1)
 
             except Exception as e:
-                print(f"语音处理错误: {e}")
-                self.is_speaking = False
+                print(f"[TTS进程] 异常: {e}")
+                import traceback
+                traceback.print_exc()
+                try:
+                    is_speaking_flag.put(False, block=False)
+                except:
+                    pass
+                time.sleep(1)
+
+        # 清理资源
+        try:
+            pygame.mixer.quit()
+        except:
+            pass
+        print("[TTS进程] 已停止")
+
+    def _monitor_speaking_status(self):
+        """监控播放状态（从进程队列读取）"""
+        self._is_speaking = False
+        while self.running:
+            try:
+                # 非阻塞读取状态
+                try:
+                    self._is_speaking = self.is_speaking_flag.get_nowait()
+                except:
+                    pass
+                time.sleep(0.1)
+            except Exception as e:
+                print(f"[状态监控] 异常: {e}")
                 time.sleep(1)
 
     def stop(self):
+        """停止语音引擎"""
+        print("[停止] 正在关闭语音引擎...")
         self.running = False
         if self.speech_thread.is_alive():
             self.speech_thread.join(timeout=1.0)
