@@ -70,4 +70,4 @@ class QAManager:
         if best_score >= threshold:
             return self.answers[best_idx], float(best_score),best_audio_file,best_command
         else:
-            return "我暂时不知道怎么回答", float(best_score)
+            return "我暂时不知道怎么回答", float(best_score), None, None
