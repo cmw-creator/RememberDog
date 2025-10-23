@@ -4,6 +4,7 @@ import time
 import threading
 import os
 from datetime import datetime, timedelta
+from multiprocessing import Process, Queue as MPQueue, Manager
 import pyttsx3
 from memory.qa_manager import QAManager
 
@@ -26,7 +27,9 @@ class MemoryManager:
         self.shared_memory = {}  # 共享内存字典
         self.event_callbacks = {}  # 事件回调函数注册表
         self.lock = threading.Lock()  # 线程安全锁
-
+        # ✅ 使用 Manager().Value 实现进程间共享布尔值
+        manager = Manager()
+        self.runSpeaking = manager.Value('b', False)
         #QA_Manager
         self.qa_manager=QAManager()
         

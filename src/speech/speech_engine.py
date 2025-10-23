@@ -6,6 +6,7 @@ import threading
 import time
 import queue
 import os
+from multiprocessing import Process, Queue as MPQueue, Manager
 from playsound import playsound
 from flask import Flask, render_template_string, jsonify
 
@@ -18,7 +19,6 @@ class SpeechEngine:
         self.engine.setProperty('voice', 'sit/cmn')
 
 
-        self.speech_queue = queue.Queue()
         self.is_speaking = False
         self.running = True
 
@@ -32,15 +32,23 @@ class SpeechEngine:
         self.memory_manager.register_event_callback("face_detected", self.handle_face_event, "FaceEventHandler")
         self.memory_manager.register_event_callback("photo_detected", self.handle_photo_event, "FaceEventHandler")
 
-        # 启动语音处理线程
-        self.speech_thread = threading.Thread(target=self._process_speech_queue)
-        self.speech_thread.daemon = True
-        self.speech_thread.start()
+
+        self.speech_queue = MPQueue()
+
+        # 启动独立 TTS 进程
+        self.tts_process = Process(
+            target=self._process_speech_queue,
+            args=(self.speech_queue, self.memory_manager.runSpeaking),
+            daemon=True
+        )
+        # self.tts_process = Process(target=self._process_speech_queue, args=(self.speech_queue, self.memory_manager.runSpeaking), daemon=True)
+        self.tts_process.start()
+
 
         # 启动Flask线程
-        self.flask_thread = threading.Thread(target=self._start_flask)
-        self.flask_thread.daemon = True
-        self.flask_thread.start()
+        # self.flask_thread = threading.Thread(target=self._start_flask)
+        # self.flask_thread.daemon = True
+        # self.flask_thread.start()
 
         print("语音事件处理器初始化完成")
 
@@ -78,81 +86,110 @@ class SpeechEngine:
         audio_file = event_data.get("audio_file", None)
         print(f"添加到队列: text={text}, audio_file={audio_file}, priority={priority}")
         self.speech_queue.put((priority, text, audio_file))
+    @staticmethod
+    def _process_speech_queue(speech_queue, runSpeaking, is_speaking_flag=None, running_flag=None):
+        import pyttsx3
+        import time
+        import os
+        import queue as _queue
+        from playsound import playsound
+        import pygame
 
-    def _process_speech_queue(self):
-        while self.running:
+        print("[TTS进程] 已启动, 等待任务...")
+
+        while True:
+            # 如果外部提供了 running_flag（例如 multiprocessing.Event），可随时停止
+            if running_flag is not None and not running_flag.is_set():
+                print("[TTS进程] 收到停止信号 (running_flag)")
+                break
+
             try:
-                # 从队列获取任务
+                # 从队列获取第一个任务（带超时）
                 try:
                     priority, text, audio_file = speech_queue.get(timeout=1)
-                except:
+                except _queue.Empty:
                     continue
 
                 if text is None and audio_file is None:  # 停止信号
                     print("[TTS进程] 收到退出信号")
                     break
 
-                # 更新播放状态
-                try:
-                    is_speaking_flag.put(True, block=False)
-                except:
-                    pass
-
-                for _ in range(self.speech_queue.qsize()):
+                # 标记正在播放
+                if is_speaking_flag is not None:
                     try:
-                        priority, text, audio_file = self.speech_queue.get_nowait()
-                        if highest_priority is None or priority > highest_priority:
-                            highest_priority = priority
-                            highest_text = text
-                            highest_audio = audio_file
-                        self.speech_queue.put((priority, text, audio_file))
-                    except queue.Empty:
+                        is_speaking_flag.put(True, block=False)
+                    except Exception:
+                        pass
+
+                # 把队列里当前所有项都取出来，用于决定最高优先级
+                items = [(priority, text, audio_file)]
+                while True:
+                    try:
+                        items.append(speech_queue.get_nowait())
+                    except _queue.Empty:
                         break
 
-                if highest_text is not None or highest_audio is not None:
-                    # 从队列中移除最高优先级的项目
-                    for _ in range(self.speech_queue.qsize()):
-                        priority, text, audio_file = self.speech_queue.get_nowait()
-                        if text != highest_text or audio_file != highest_audio:
-                            self.speech_queue.put((priority, text, audio_file))
+                # 选择优先级最高的一项
+                highest_priority = None
+                highest_text = None
+                highest_audio = None
+                for p, t, a in items:
+                    if highest_priority is None or p > highest_priority:
+                        highest_priority = p
+                        highest_text = t
+                        highest_audio = a
 
+                # 把除最高优先项外的项目重新放回队列
+                used = False
+                for p, t, a in items:
+                    if not used and p == highest_priority and t == highest_text and a == highest_audio:
+                        used = True
+                        continue
+                    speech_queue.put((p, t, a))
 
-                    self.is_speaking = True
-                    if highest_audio and os.path.exists(highest_audio):
-                        print(f"播放音频文件: {highest_audio}")
+                # 播放：每次播放前都新建 engine
+                if highest_text:
+                    print(f"[TTS进程] TTS 发声: {highest_text}")
+                    engine = None
+                    try:
+                        engine = pyttsx3.init()
+                        engine.setProperty('rate', 150)
+                        engine.setProperty('volume', 0.9)
+                        runSpeaking.value = True
+                        engine.say(highest_text)
+                        engine.runAndWait()
+                        runSpeaking.value = False
+                    finally:
                         try:
-                            playsound(highest_audio)
-                        except Exception as e:
-                            print(f"播放音频失败，改为TTS: {e}")
-                            if highest_text:
-                                self.engine.say(highest_text)
-                                self.engine.runAndWait()
-                    else:
-                        if highest_text:
-                            print(f"TTS 发声: {highest_text}")
-                            self.engine.say(highest_text)
-                            self.engine.runAndWait()
+                            del engine
+                        except Exception:
+                            pass
 
-                    
-
-                    self.is_speaking = False
-
+                # 延迟，释放资源
                 time.sleep(0.1)
+
+                # 播放结束标志
+                if is_speaking_flag is not None:
+                    try:
+                        is_speaking_flag.put(False, block=False)
+                    except Exception:
+                        pass
 
             except Exception as e:
                 print(f"[TTS进程] 异常: {e}")
                 import traceback
                 traceback.print_exc()
-                try:
-                    is_speaking_flag.put(False, block=False)
-                except:
-                    pass
+                if is_speaking_flag is not None:
+                    try:
+                        is_speaking_flag.put(False, block=False)
+                    except Exception:
+                        pass
                 time.sleep(1)
 
         # 清理资源
         try:
             pygame.mixer.quit()
-        except:
+        except Exception:
             pass
         print("[TTS进程] 已停止")
 

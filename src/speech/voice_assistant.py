@@ -43,11 +43,11 @@ class VoiceAssistant:
         self.max_gain = 5.0
 
         # TTS 合成队列(使用进程间队列)
-        self.speech_queue = MPQueue()
-
-        # 启动独立 TTS 进程
-        self.tts_process = Process(target=self._tts_process_worker, args=(self.speech_queue,), daemon=True)
-        self.tts_process.start()
+        # self.speech_queue = MPQueue()
+        #
+        # # 启动独立 TTS 进程
+        # self.tts_process = Process(target=self._tts_process_worker, args=(self.speech_queue,), daemon=True)
+        # self.tts_process.start()
 
         # 运行状态
         self.running = True
@@ -194,7 +194,7 @@ class VoiceAssistant:
             if not current_text:
                 return
 
-            # 如果和上次一样,跳过
+            # 如果和上次识别内容完全相同, 跳过
             if current_text == self.last_text:
                 return
 
@@ -210,14 +210,24 @@ class VoiceAssistant:
                         if sentence.strip():
                             complete_sentences.append(sentence.strip())
 
-                # 处理每个完整句子
+                # 找出“新出现”的完整句子（相对于上次）
+                new_sentences = []
                 for sentence in complete_sentences:
+                    if sentence not in getattr(self, "handled_sentences", set()):
+                        new_sentences.append(sentence)
+
+                # 只处理未处理过的句子
+                for sentence in new_sentences:
                     print(f"识别到: {sentence}")
                     self.outer._on_recognized(sentence)
 
-            # 更新历史记录
-            self.last_text = current_text
+                # 更新已处理句子集合
+                if not hasattr(self, "handled_sentences"):
+                    self.handled_sentences = set()
+                self.handled_sentences.update(new_sentences)
 
+            # 更新最近识别文本
+            self.last_text = current_text
         def on_complete(self):
             print("Paraformer 回调: on_complete")
             self.last_text = ""
@@ -257,10 +267,14 @@ class VoiceAssistant:
             audio_buffer = bytearray()
 
             while self.running and self.listening:
-                raw = stream.read(self.chunk, exception_on_overflow=False)
-                enhanced = self.apply_audio_enhancement(raw)
-                # audio_buffer.extend(enhanced)  # 累积音频数据
-                recognition.send_audio_frame(raw)
+                # print(self.memory_manager.runSpeaking.value)
+                if not self.memory_manager.runSpeaking.value:
+                    raw = stream.read(self.chunk, exception_on_overflow=False)
+                    recognition.send_audio_frame(raw)
+
+
+                # 将音频帧发送给识别器
+
 
         except Exception as e:
             print("run_listen 出错:", e)
@@ -305,6 +319,7 @@ class VoiceAssistant:
                 break
 
         print(f"最终回答: {final_answer}")
+        # self.speak(final_answer)
 
     def execute_action(self, action, text):
         """执行对应动作"""
@@ -390,12 +405,12 @@ if __name__ == "__main__":
     robot_controller = RobotController()
     # qa_manager = QAManager()
     #创建语音引擎
-    # speech_engine = SpeechEngine(memory_manager)
+
 
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager,robot_controller)
     assistant.start()
-
+    # speech_engine = SpeechEngine(memory_manager)
     try:
         while True:
             time.sleep(1)
