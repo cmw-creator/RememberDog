@@ -1,6 +1,10 @@
 {
   "commands": [
     {
+      "pattern": "起立",
+      "action": "stand up"
+    },
+    {
       "pattern": "过来",
       "action": "come"
     },
@@ -9,8 +13,8 @@
       "action": "leave"
     },
     {
-      "pattern": "吃药",
-      "action": "medicine_remind"
+      "pattern": "转个圈",
+      "action": "go round"
     },
     {
       "pattern": "提醒",
@@ -19,22 +23,6 @@
     {
       "pattern": "问题",
       "action": "add_question"
-    },
-    {
-      "pattern": "停止",
-      "action": "stop"
-    },
-    {
-      "pattern": "开始",
-      "action": "start"
-    },
-    {
-      "pattern": "帮助",
-      "action": "help"
-    },
-    {
-      "pattern": "我要去",
-      "action": "goto"
     }
   ],
   "responses": {

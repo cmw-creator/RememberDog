@@ -468,28 +468,15 @@ class VoiceAssistant:
         text=text.replace(" ", "")#去除所有空格
         if(text<=3): 
             return #太少的字就忽略调了
-        # 首先检查问候语
-        for greeting in self.commands_db["responses"]["greeting"]:
-            if greeting in text:
-                self.speak_random(["你好！", "您好！", "嗨，有什么可以帮您？"])
-                return
+        
 
-        command_matched = False
-        for command in self.commands_db["commands"]:
-            if re.search(command["pattern"], text):
-                self.execute_action(command["action"], text)
-                command_matched = True
-                break
-
-        if not command_matched:
-            self.speak_random(self.commands_db["responses"]["unknown"])
 
         ### QA记忆的相关代码写在这里 ###
         # 走问答知识库
         if len(text)<2:
             pass
-        answer, score, audio_path = self.qa_manager.query(text, top_k=1, threshold=0.5)
-        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path}")
+        answer, score, audio_path, command= self.qa_manager.query(text, top_k=1, threshold=0.5)
+        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path},动作：{command}")
 
         # 交给生成式模型润色
         final_answer=answer
@@ -502,6 +489,10 @@ class VoiceAssistant:
         self.memory_manager.trigger_event("speak_event", event_payload)
         # final_answer = self.generate_answer(text, answer)
 
+        for c in self.commands_db["commands"]:
+            if c["action"]==command:
+                self.execute_action(command["action"], text)
+                break
 
         print(f"最终回答: {final_answer}")
 
@@ -511,12 +502,10 @@ class VoiceAssistant:
             self.handle_add_reminder(text)
         elif action == "add_question":
             self.handle_add_question(text)
-        elif action == "stop":
-            self.listening = False
-            print("已停止监听")
-        elif action == "start":
-            self.listening = True
-            print("开始监听")
+        elif action == "stand up":
+            print("动作：狗站起来")
+        elif action == "go round":
+             print("动作：狗转个圈")
         elif action == "help":
             print("发出声音：我可以帮您添加提醒、设置问题、控制机器狗行动")
         elif action == "goto":
