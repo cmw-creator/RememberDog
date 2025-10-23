@@ -32,7 +32,7 @@ class FaceDetector:
         self.camera_manager = camera_manager #使用的摄像头
         self.memory_manager = memory_manager # 添加 memory_manager 引用
         # 性能优化
-        self.frame_skip = 50  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 50  # 如果为2，则每3帧处理1帧 50ms/帧
         self.frame_count = 0
 
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳
@@ -88,7 +88,7 @@ class FaceDetector:
         while True:
             self.frame_count += 1
             if self.frame_count % self.frame_skip != 0:
-                time.sleep(0.01)
+                time.sleep(0.05)
                 continue  # 跳过部分帧以降低计算负载
             
             

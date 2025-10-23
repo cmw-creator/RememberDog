@@ -1,130 +1,28 @@
 {
   "questions": [
     {
-      "question": "我的女儿是是谁",
-      "answer": "您的女儿是小芳，她昨天来看过你呢。",
+      "question": "你好，小影。",
+      "answer": "你好呀，我是小影。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/1.wav"
+      "audio_file": "assets/voice/dog/hello.wav"
     },
     {
-      "question": "我的孙子的名字是",
-      "answer": "您的孙子是小宇，他今年9岁了，在阳光实验小学读三年级。",
+      "question": "小影，过来一下。",
+      "answer": "我这就来！",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/2.wav"
+      "audio_file": "assets/voice/dog/go.wav"
     },
     {
-      "question": "我的最喜欢的家乡菜是什么",
-      "answer": "您最喜欢红烧肉。",
+      "question": "转个圈吧。",
+      "answer": "好的。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/3.wav"
+      "audio_file": "assets/voice/dog/go.wav"
     },
     {
-      "question": "我的出生在哪个城市？",
-      "answer": "您出生在北京。",
+      "question": "小影，到别的地方去。",
+      "answer": "好的，我走啦，有事叫我。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/4.wav"
-    },
-    {
-      "question": "我家在哪？",
-      "answer": "您家在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/5.wav"
-    },
-    {
-      "question": "我家的地址在哪？",
-      "answer": "您家的地址在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/6.wav"
-    },
-    {
-      "question": "我女儿的家在哪？",
-      "answer": "您女儿家在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/7.wav"
-    },
-    {
-      "question": "我女儿住在哪？地址是什么？",
-      "answer": "您女儿家的地址在南京市玄武区南京理工大学竹园小区1栋202，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/8.wav"
-    },
-    {
-      "question": "谢谢你小影",
-      "answer": "不用谢！能陪您聊天是我的荣幸，您有什么想说的尽管告诉我。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/9.wav"
-    },
-    {
-      "question": "我今天心情不好",
-      "answer": "别难过，要不要听听轻音乐？或者我给小芳打个电话让她来陪您？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/10.wav"
-    },
-    {
-      "question": "我想听个笑话",
-      "answer": "好的！为什么数学书总是很忧郁？——因为它有太多问题要解决！",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/11.wav"
-    },
-    {
-      "question": "给我讲个故事",
-      "answer": "想听您小时候在北京胡同里的故事呢！您愿意给我讲讲吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/12.wav"
-    },
-    {
-      "question": "我的女儿小芳的电话号码是多少？",
-      "answer": "您的女儿小芳的电话是123 4567 8967",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/13.wav"
-    },
-    {
-      "question": "我的电话号码是多少？",
-      "answer": "您的女儿小芳的电话是124 3567 9867",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/14.wav"
-    },
-    {
-      "question": "你是谁",
-      "answer": "我是你的狗狗小影，快来和我说话吧",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/15.wav"
-    },
-    {
-      "question": "你叫什么名字",
-      "answer": "我叫小影呀，快来和我说话吧",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/15.wav"
-    },
-    {
-      "question": "小影是谁",
-      "answer": "我就是小影呀，快来和我说话吧",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/15.wav"
-    },
-    {
-      "question": "早上好。",
-      "answer": "早上好。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/16.wav"
-    },
-    {
-      "question": "晚上好。",
-      "answer": "晚上好。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/17.wav"
-    },
-    {
-      "question": "下午好。",
-      "answer": "下午好。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/18.wav"
-    },
-    {
-      "question": "你好",
-      "answer": "嗨！我是小影，有什么需要我帮忙的吗。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/19.wav"
+      "audio_file": "assets/voice/dog/go.wav"
     }
   ]
 }

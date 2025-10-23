@@ -18,6 +18,8 @@ class CameraManager:
         self.camera = cv2.VideoCapture(camera_id)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self.camera.set(cv2.CAP_PROP_FPS, 10)
         
         # 当前帧和锁
         self.current_frame = None
@@ -50,7 +52,7 @@ class CameraManager:
     def _capture_frames(self):
         """内部方法：持续捕获帧"""
         while self.running:
-            for _ in range(4):
+            for _ in range(1):
                 self.camera.grab()  # 清空缓冲区
             
             ret, frame = self.camera.retrieve()
@@ -60,14 +62,17 @@ class CameraManager:
                     # 添加到缓存
                     self.frame_buffer.append(frame.copy())
                     # 保存到磁盘（可选）
-                    filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
-                    cv2.imwrite(filename, frame)
+                    #filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
+                    #cv2.imwrite(filename, frame)
             time.sleep(0.1)
 
     def get_frame(self):
         """获取当前帧的副本"""
         with self.frame_lock:
-            return self.current_frame.copy() if self.current_frame is not None else None
+            if self.current_frame is not None:
+                # 只有当确实需要时才复制
+                return self.current_frame.copy()
+        return None
 
     def get_recent_frames(self):
         """获取缓存的最近 N 帧"""

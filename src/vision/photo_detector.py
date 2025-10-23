@@ -32,7 +32,7 @@ class PhotoDetector:
         self.thread = None
 
         # 性能优化
-        self.frame_skip = 60  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 10  # 如果为2，则每3帧处理1帧 50ms一帧
         self.frame_count = 0
 
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳
@@ -201,7 +201,7 @@ class PhotoDetector:
         while self.running:
             self.frame_count += 1
             if self.frame_count % self.frame_skip != 0:
-                time.sleep(0.01)
+                time.sleep(0.05)
                 continue  # 跳过部分帧以降低计算负载
             frame = self.camera_manager.get_frame()
             
