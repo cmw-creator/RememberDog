@@ -13,10 +13,10 @@ from flask import Flask, render_template_string, jsonify
 class SpeechEngine:
     def __init__(self, memory_manager, rate=150, volume=0.9):
         self.memory_manager = memory_manager
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', rate)
-        self.engine.setProperty('volume', volume)
-        self.engine.setProperty('voice', 'sit/cmn')
+        # self.engine = pyttsx3.init()
+        # self.engine.setProperty('rate', rate)
+        # self.engine.setProperty('volume', volume)
+        # self.engine.setProperty('voice', 'sit/cmn')
 
 
         self.is_speaking = False
@@ -96,7 +96,12 @@ class SpeechEngine:
         import pygame
 
         print("[TTS进程] 已启动, 等待任务...")
-
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 150)
+        engine.setProperty('volume', 0.9)
+        # self.engine.setProperty('rate', rate)
+        # self.engine.setProperty('volume', volume)
+        engine.setProperty('voice', 'sit/cmn')
         while True:
             # 如果外部提供了 running_flag（例如 multiprocessing.Event），可随时停止
             if running_flag is not None and not running_flag.is_set():
@@ -147,23 +152,15 @@ class SpeechEngine:
                         continue
                     speech_queue.put((p, t, a))
 
-                # 播放：每次播放前都新建 engine
                 if highest_text:
                     print(f"[TTS进程] TTS 发声: {highest_text}")
-                    engine = None
-                    try:
-                        engine = pyttsx3.init()
-                        engine.setProperty('rate', 150)
-                        engine.setProperty('volume', 0.9)
-                        runSpeaking.value = True
-                        engine.say(highest_text)
-                        engine.runAndWait()
-                        runSpeaking.value = False
-                    finally:
-                        try:
-                            del engine
-                        except Exception:
-                            pass
+
+                    runSpeaking.set()
+                    engine.say(highest_text)
+                    engine.runAndWait()
+                    print("说完了")
+                    runSpeaking.clear()
+
 
                 # 延迟，释放资源
                 time.sleep(0.1)

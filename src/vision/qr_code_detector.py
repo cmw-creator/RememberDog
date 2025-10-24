@@ -17,9 +17,9 @@ class QRCodeDetector:
         # 硬件配置
         self.camera_manager = camera_manager #摄像头
         self.memory_manager = memory_manager  #记忆模块
-        # 语音引擎初始化
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)  # 语速调节
+        # # 语音引擎初始化
+        # self.engine = pyttsx3.init()
+        # self.engine.setProperty('rate', 150)  # 语速调节
         
         # 存储识别的编码数据（药瓶二维码->语音映射）
         with open('assets/qr_code_info.json', 'r', encoding='utf-8') as f:

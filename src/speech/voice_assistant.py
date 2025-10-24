@@ -33,7 +33,7 @@ class VoiceAssistant:
         self.rate = 16000
         self.channels = 1
         self.format = pyaudio.paInt16
-        self.chunk = 3200
+        self.chunk = 8192
 
         # 音频增强参数
         self.rnnoise = RNNoise(sample_rate=48000)
@@ -252,7 +252,9 @@ class VoiceAssistant:
             format="pcm",
             sample_rate=self.rate,
             callback=callback,
-            semantic_punctuation_enabled=True
+            language_hints=["zh"],
+            semantic_punctuation_enabled=True,
+            max_sentence_silence=400
         )
         recognition.start()
 
@@ -268,9 +270,11 @@ class VoiceAssistant:
 
             while self.running and self.listening:
                 # print(self.memory_manager.runSpeaking.value)
-                if not self.memory_manager.runSpeaking.value:
-                    raw = stream.read(self.chunk, exception_on_overflow=False)
+                # print(self.memory_manager.runSpeaking.is_set())
+                raw = stream.read(self.chunk)
+                if not self.memory_manager.runSpeaking.is_set():
                     recognition.send_audio_frame(raw)
+                    # time.sleep(0.1)
 
 
                 # 将音频帧发送给识别器
@@ -410,7 +414,7 @@ if __name__ == "__main__":
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager,robot_controller)
     assistant.start()
-    # speech_engine = SpeechEngine(memory_manager)
+    speech_engine = SpeechEngine(memory_manager)
     try:
         while True:
             time.sleep(1)

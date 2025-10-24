@@ -10,8 +10,14 @@ from speech.speech_engine import SpeechEngine
 from control.control import RobotController
 import threading
 import time
+import os
+import multiprocessing
 
+# 推荐：在程序最开始就禁用 tokenizers 并行或设置启动方法
+# os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 from memory.qa_manager import QAManager
+# multiprocessing.set_start_method('spawn', force=True)
+# os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 #管理机器狗动作
 robot_controller=RobotController()

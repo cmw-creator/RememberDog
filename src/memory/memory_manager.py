@@ -5,6 +5,7 @@ import threading
 import os
 from datetime import datetime, timedelta
 from multiprocessing import Process, Queue as MPQueue, Manager
+import multiprocessing
 import pyttsx3
 from memory.qa_manager import QAManager
 
@@ -15,8 +16,8 @@ class MemoryManager:
         # 加载提醒数据库
         self.reminders = self.load_json(reminder_path)
         # 语音引擎
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)
+        # self.engine = pyttsx3.init()
+        # self.engine.setProperty('rate', 150)
         # 运行标志
         self.running = True
         # 问答线程
@@ -28,8 +29,9 @@ class MemoryManager:
         self.event_callbacks = {}  # 事件回调函数注册表
         self.lock = threading.Lock()  # 线程安全锁
         # ✅ 使用 Manager().Value 实现进程间共享布尔值
-        manager = Manager()
-        self.runSpeaking = manager.Value('b', False)
+        self.runSpeaking = multiprocessing.Event()
+        # manager = Manager()
+        #  self.runSpeaking = manager.Value('b', False)
         #QA_Manager
         self.qa_manager=QAManager()
         
