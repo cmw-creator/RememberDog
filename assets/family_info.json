@@ -8,6 +8,20 @@
       "command":"stand up"
     },
     {
+      "question": "小影,趴下。",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/hello.wav",
+      "command":"stand up"
+    },
+    {
+      "question": "小影,站起来。",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/hello.wav",
+      "command":"stand up"
+    },
+    {
       "question": "过来一下，小影。",
       "answer": "我这就来！",
       "update_time": "2025-10-01 16:35:00",
@@ -62,27 +76,6 @@
       "update_time": "2025-10-01 16:35:00",
       "audio_file": "assets/voice/dog/go.wav",
       "command":"leave"
-    },
-    {
-      "question": "小影，我记不清我女儿家了，她家在哪？",
-      "answer": "您女儿家在南京市玄武区南京理工大学竹园小区一栋二楼，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "command": "navigate"
-    },
-    {
-      "question": "我是不是有个孙女，他今年多大了？",
-      "answer": "您的孙女是小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "command": "info"
-    },
-    {
-      "question": "我想给我女儿打个电话",
-      "answer": "正在为您搜索，您女儿的电话是13627931054。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "command": "call"
     },
     {
       "question": "小影，我记不清我女儿家了，她家在哪？",

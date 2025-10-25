@@ -249,7 +249,9 @@ class VoiceAssistant:
         # 时间模式：前进5秒、左转0.5秒
         time_patterns = [
             (r'前进\s*(\d+\.?\d*)\s*秒', 'forward'),
-            (r'后退\s*(\d+\.?\d*)\s*秒', 'back'), 
+            (r'往前\s*(\d+\.?\d*)\s*秒', 'forward'),
+            (r'后退\s*(\d+\.?\d*)\s*秒', 'back'),
+            (r'往后\s*(\d+\.?\d*)\s*秒', 'back'),  
             (r'左转\s*(\d+\.?\d*)\s*秒', 'turn_left'),
             (r'右转\s*(\d+\.?\d*)\s*秒', 'turn_right')
         ]
@@ -257,8 +259,9 @@ class VoiceAssistant:
         # 程度模式：前进一点、右转一点
         degree_patterns = [
             (r'前进\s*(一点|一些|少许)', 'forward', 0.3),
+            (r'往前\s*(一点|一些|少许)', 'forward', 0.3),
             (r'后退\s*(一点|一些|少许)', 'back', 0.3),
-            (r'左转\s*(一点|一些|少许)', 'turn_left', 0.5),
+            (r'往后\s*(一点|一些|少许)', 'turn_left', 0.5),
             (r'右转\s*(一点|一些|少许)', 'turn_right', 0.5),
             (r'前进\s*(很多|大量)', 'forward', 2.0),
             (r'后退\s*(很多|大量)', 'back', 2.0)
@@ -361,6 +364,7 @@ class VoiceAssistant:
     def execute_action(self, action, text):
         """执行对应动作"""
         fine_action,fine_duration= self.parse_fine_control(text)
+        print("动作时间：",fine_duration)
         if(fine_duration is None):
             fine_duration=0.3
         if action == "add_reminder":
@@ -376,7 +380,7 @@ class VoiceAssistant:
         elif action == "help":
             print("我可以帮您添加提醒、设置问题、控制机器狗行动")
         elif action == "stand up":
-            print("命令：站起来")
+            print("命令：站起来/趴下")
             self.robot_controller.stand_up()
         elif action == "turn left":
             print("命令：左转")
@@ -390,6 +394,9 @@ class VoiceAssistant:
         elif action == "back":
             print("命令：后退")
             self.robot_controller.back(fine_duration)
+        elif action == "give hand":
+            print("命令：握手")
+            self.robot_controller.give_hand()
         else:
             print(f"警告：无命令: {action}")
 
