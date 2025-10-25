@@ -243,7 +243,40 @@ class VoiceAssistant:
     def _on_recognized(self, text: str):
         """识别到完整句子后的动作"""
         self.process_command(text)
-
+    
+    def parse_fine_control(self, text):
+        """解析精细控制指令，支持时间和程度控制"""
+        # 时间模式：前进5秒、左转0.5秒
+        time_patterns = [
+            (r'前进\s*(\d+\.?\d*)\s*秒', 'forward'),
+            (r'后退\s*(\d+\.?\d*)\s*秒', 'back'), 
+            (r'左转\s*(\d+\.?\d*)\s*秒', 'turn_left'),
+            (r'右转\s*(\d+\.?\d*)\s*秒', 'turn_right')
+        ]
+        
+        # 程度模式：前进一点、右转一点
+        degree_patterns = [
+            (r'前进\s*(一点|一些|少许)', 'forward', 0.3),
+            (r'后退\s*(一点|一些|少许)', 'back', 0.3),
+            (r'左转\s*(一点|一些|少许)', 'turn_left', 0.5),
+            (r'右转\s*(一点|一些|少许)', 'turn_right', 0.5),
+            (r'前进\s*(很多|大量)', 'forward', 2.0),
+            (r'后退\s*(很多|大量)', 'back', 2.0)
+        ]
+        
+        # 先尝试匹配时间模式
+        for pattern, action in time_patterns:
+            match = re.search(pattern, text)
+            if match:
+                duration = float(match.group(1))
+                return action, duration
+        
+        # 再尝试匹配程度模式  
+        for pattern, action, default_duration in degree_patterns:
+            if re.search(pattern, text):
+                return action, default_duration
+        
+        return None, None
     def run_listen(self):
         """用 Paraformer SDK 做流式识别"""
         callback = VoiceAssistant._ASRCallback(self)
@@ -327,6 +360,9 @@ class VoiceAssistant:
 
     def execute_action(self, action, text):
         """执行对应动作"""
+        fine_action,fine_duration= self.parse_fine_control(text)
+        if(fine_duration is None):
+            fine_duration=0.3
         if action == "add_reminder":
             self.handle_add_reminder(text)
         elif action == "add_question":
@@ -344,16 +380,16 @@ class VoiceAssistant:
             self.robot_controller.stand_up()
         elif action == "turn left":
             print("命令：左转")
-            self.robot_controller.move_turn_left_90()
+            self.robot_controller.move_left(fine_duration)
         elif action == "turn right":
             print("命令：右转")
-            self.robot_controller.move_turn_right_90()
+            self.robot_controller.move_right(fine_duration)
         elif action == "forward":
             print("命令：前进")
-            self.robot_controller.forward(0.3)
+            self.robot_controller.forward(fine_duration)
         elif action == "back":
             print("命令：后退")
-            self.robot_controller.back(0.3)
+            self.robot_controller.back(fine_duration)
         else:
             print(f"警告：无命令: {action}")
 
