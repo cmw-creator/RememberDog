@@ -93,7 +93,6 @@ class SpeechEngine:
         import os
         import queue as _queue
         from playsound import playsound
-        import pygame
 
         print("[TTS进程] 已启动, 等待任务...")
         engine = pyttsx3.init()
@@ -182,12 +181,6 @@ class SpeechEngine:
                     except Exception:
                         pass
                 time.sleep(1)
-
-        # 清理资源
-        try:
-            pygame.mixer.quit()
-        except Exception:
-            pass
         print("[TTS进程] 已停止")
 
     def _monitor_speaking_status(self):

@@ -31,6 +31,7 @@ class RobotController:
     def __init__(self):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.send_addr = ('192.168.1.120', 43893)
+        h = HeartBeat()
 
     def send_data(self, code, value, ctype):
         data = struct.pack("<3i", code, value, ctype)
@@ -38,7 +39,8 @@ class RobotController:
 
     def stand_up(self):  # 起立
         self.send_data(0x21010202, 0, 0)
-        time.sleep(3)
+        print("stand_up")
+        #time.sleep(3)
 
     def move_left(self, duration, value: int = -20000):  # 左平移,ps:移动指令给两个参数，duration限定运动时间，value限定距离
         start_time = time.time()
@@ -145,6 +147,11 @@ class RobotController:
 
     def change_autonomic(self):
         self.send_data(0x21010C03, 0, 0)
+        time.sleep(2)
+
+    #握手
+    def give_hand(self):  # 切换平地低速
+        self.send_data(0x21010507, 0, 0)
         time.sleep(2)
 
 if __name__ == '__main__':

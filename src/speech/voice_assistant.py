@@ -339,8 +339,23 @@ class VoiceAssistant:
             print("开始监听")
         elif action == "help":
             print("我可以帮您添加提醒、设置问题、控制机器狗行动")
+        elif action == "stand up":
+            print("命令：站起来")
+            self.robot_controller.stand_up()
+        elif action == "turn left":
+            print("命令：左转")
+            self.robot_controller.move_turn_left_90()
+        elif action == "turn right":
+            print("命令：右转")
+            self.robot_controller.move_turn_right_90()
+        elif action == "forward":
+            print("命令：前进")
+            self.robot_controller.forward(0.3)
+        elif action == "back":
+            print("命令：后退")
+            self.robot_controller.back(0.3)
         else:
-            print(f"执行命令: {action}")
+            print(f"警告：无命令: {action}")
 
     def call_online_model(self, user_text):
         """使用 OpenAI 兼容接口调用通义千问"""

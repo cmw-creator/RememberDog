@@ -8,14 +8,49 @@
       "command":"stand up"
     },
     {
-      "question": "小影，过来一下。",
+      "question": "过来一下，小影。",
       "answer": "我这就来！",
       "update_time": "2025-10-01 16:35:00",
       "audio_file": "assets/voice/dog/go.wav",
       "command":"come"
     },
     {
-      "question": "转个圈吧。",
+      "question": "小影，往前走。",
+      "answer": "好的，前进。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/go.wav",
+      "command":"forward"
+    },
+    {
+      "question": "小影，往后走。",
+      "answer": "好的，后退。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/go.wav",
+      "command":"back"
+    },
+    {
+      "question": "小影，左转。",
+      "answer": "好的，左转。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/go.wav",
+      "command":"turn left"
+    },
+    {
+      "question": "小影，右转。",
+      "answer": "好的，右转。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/go.wav",
+      "command":"turn right"
+    },
+    {
+      "question": "小影，握一下手。",
+      "answer": "好的。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/go.wav",
+      "command":"give hand"
+    },
+    {
+      "question": "小影，转个圈吧。",
       "answer": "好的。",
       "update_time": "2025-10-01 16:35:00",
       "audio_file": "assets/voice/dog/go.wav",

@@ -100,7 +100,7 @@ class FaceDetector:
                 cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
                 #print("人脸识别")
                 # 人脸检测
-                faces = self.detector(cv_image_rgb, 0)  # 不进行上采样（速度优先）
+                faces = self.detector(cv_image_rgb, 1)  # 不进行上采样（速度优先）
                 
                 for face in faces:
                     # 关键点检测与特征提取
