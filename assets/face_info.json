@@ -2,21 +2,21 @@
   "face_00001": {
     "description": "这是你的女儿小芳，她今年30岁了，她在上海工作，前天刚刚来看你呢。",
     "update_time": "2025-10-01 17:45:00",
-    "audio_file": "assets/voice/face/face_00001.wav"
+    "audio_file": "assets/voice/face/face_0000x.wav"
   },
   "face_00002": {
     "description": "这是你的二女儿，她今年28岁，是一名医生，住在北京，每周都会给你打电话。",
     "update_time": "2025-10-01 17:45:00",
-    "audio_file": "assets/voice/face/face_00002.wav"
+    "audio_file": "assets/voice/face/face_0000x.wav"
   },
   "face_00003": {
     "description": "这是你的儿子，他今年35岁，是一名工程师，有两个可爱的孩子，周末经常带他们来看你。",
     "update_time": "2025-10-01 17:45:00",
-    "audio_file": "assets/voice/face/face_00003.wav"
+    "audio_file": "assets/voice/face/face_0000x.wav"
   },
   "face_00004": {
     "description": "这是你的老同事赵老师，你们以前一起教书，退休后还经常一起喝茶聊天。",
     "update_time": "2025-10-01 17:45:00",
-    "audio_file": "audio/face_00004.mp3"
+    "audio_file": "assets/voice/face/face_00001.mp3"
   }
 }
