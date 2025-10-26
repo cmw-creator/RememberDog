@@ -340,6 +340,9 @@ class VoiceAssistant:
         if len(text) < 2:
             pass
         answer, score, audio_path, command = self.qa_manager.query(text, top_k=1, threshold=0.5)
+        if command=="No Answer":
+            print(answer)
+            return
         print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path},动作：{command}")
 
         # 交给生成式模型润色
@@ -384,10 +387,10 @@ class VoiceAssistant:
             self.robot_controller.stand_up()
         elif action == "turn left":
             print("命令：左转")
-            self.robot_controller.move_left(fine_duration)
+            self.robot_controller.move_turn_left_90(fine_duration)
         elif action == "turn right":
             print("命令：右转")
-            self.robot_controller.move_right(fine_duration)
+            self.robot_controller.move_turn_right_90(fine_duration)
         elif action == "forward":
             print("命令：前进")
             self.robot_controller.forward(fine_duration)
