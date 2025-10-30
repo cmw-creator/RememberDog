@@ -12,7 +12,7 @@
       "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
       "audio_file": "assets/voice/dog/dog_ok.wav",
-      "command":"stand up"
+      "command":"lie down"
     },
     {
       "question": "小影,站起来。",

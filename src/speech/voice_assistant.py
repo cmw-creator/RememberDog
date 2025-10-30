@@ -8,7 +8,8 @@ import queue
 import os
 import re
 from multiprocessing import Process, Queue as MPQueue
-
+import dashscope
+from dashscope.audio.asr import VocabularyService, Recognition
 import pyaudio
 import numpy as np
 from scipy.signal import resample_poly
@@ -41,7 +42,7 @@ class VoiceAssistant:
         self.noise_gate_threshold = 0.05
         self.agc_target_rms = 0.1
         self.max_gain = 5.0
-
+        self.pos_state = False
         # TTS 合成队列(使用进程间队列)
         # self.speech_queue = MPQueue()
         #
@@ -225,7 +226,7 @@ class VoiceAssistant:
                 # 更新已处理句子集合
                 if not hasattr(self, "handled_sentences"):
                     self.handled_sentences = set()
-                self.handled_sentences.update(new_sentences)
+                # self.handled_sentences.update(new_sentences)
 
             # 更新最近识别文本
             self.last_text = current_text
@@ -275,14 +276,41 @@ class VoiceAssistant:
                 duration = float(match.group(1))
                 return action, duration
         
-        # 再尝试匹配程度模式  
+        # 再尝试匹配程度模式
         for pattern, action, default_duration in degree_patterns:
             if re.search(pattern, text):
                 return action, default_duration
-        
+
         return None, None
     def run_listen(self):
         """用 Paraformer SDK 做流式识别"""
+        service = VocabularyService()
+        vocabulary_id = None
+
+        # 1. 定义热词数据和目标模型
+        target_model = "paraformer-realtime-v2"
+        my_vocabulary_data = [
+            {"text": "小影", "weight": 5, "lang": "zh"},
+            {"text": "前进", "weight": 4, "lang": "zh"},
+            {"text": "后退", "weight": 4, "lang": "zh"},
+            {"text": "左转", "weight": 4, "lang": "zh"},
+            {"text": "右转", "weight": 4, "lang": "zh"},
+            {"text": "往前走", "weight": 4, "lang": "zh"},
+            {"text": "往后走", "weight": 4, "lang": "zh"},
+            {"text": "趴下", "weight": 4, "lang": "zh"}
+        ]
+
+
+        vocabulary_id = service.create_vocabulary(
+            prefix="command",  # 自定义前缀，用于分类管理
+            target_model=target_model,
+            vocabulary=my_vocabulary_data
+        )
+
+
+
+
+
         callback = VoiceAssistant._ASRCallback(self)
         recognition = Recognition(
             model="paraformer-realtime-v2",
@@ -291,6 +319,7 @@ class VoiceAssistant:
             callback=callback,
             language_hints=["zh"],
             semantic_punctuation_enabled=False,
+            vocabulary_id=vocabulary_id,
             max_sentence_silence=300
         )
         recognition.start()
@@ -316,10 +345,14 @@ class VoiceAssistant:
 
                 # 将音频帧发送给识别器
 
+            # 5. 清理资源（在生产环境中根据需要决定是否删除）
+
 
         except Exception as e:
             print("run_listen 出错:", e)
         finally:
+            if vocabulary_id:
+                service.delete_vocabulary(vocabulary_id)
             try:
                 recognition.stop()
             except Exception as e:
@@ -348,6 +381,13 @@ class VoiceAssistant:
 
         # 交给生成式模型润色
         final_answer = answer
+
+        # final_answer = self.generate_answer(text, answer)
+
+        tmp = self.execute_action(command, text)
+        if tmp:
+            audio_path = tmp
+
         # 触发语音事件，兼容 speak_text / audio_file
         event_payload = {
             "speak_text": final_answer,
@@ -355,13 +395,6 @@ class VoiceAssistant:
             "audio_file": audio_path
         }
         self.memory_manager.trigger_event("speak_event", event_payload)
-        # final_answer = self.generate_answer(text, answer)
-
-        for c in self.commands_db["commands"]:
-            if c["action"] == command:
-                self.execute_action(command, text)
-                break
-
         print(f"最终回答: {final_answer}")
         # self.speak(final_answer)
 
@@ -371,36 +404,46 @@ class VoiceAssistant:
         print("动作时间：",fine_duration)
         if(fine_duration is None):
             fine_duration=0.3
-        if action == "add_reminder":
+        if fine_action == "add_reminder":
             self.handle_add_reminder(text)
-        elif action == "add_question":
+        elif fine_action == "add_question":
             self.handle_add_question(text)
-        elif action == "stop":
+        elif fine_action == "stop":
             self.listening = False
             print("已停止监听")
-        elif action == "start":
+        elif fine_action == "start":
             self.listening = True
             print("开始监听")
-        elif action == "help":
+        elif fine_action == "help":
             print("我可以帮您添加提醒、设置问题、控制机器狗行动")
-        elif action == "stand up":
-            print("命令：站起来/趴下")
+        elif fine_action == "stand up":
+            print("命令：站起来")
             self.robot_controller.stand_up()
-        elif action == "turn left":
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "lie down":
+            print("命令：趴下")
+            self.robot_controller.stand_up()
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "turn left":
             print("命令：左转")
             self.robot_controller.move_turn_left_90(fine_duration)
-        elif action == "turn right":
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "turn right":
             print("命令：右转")
             self.robot_controller.move_turn_right_90(fine_duration)
-        elif action == "forward":
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "forward":
             print("命令：前进")
             self.robot_controller.forward(fine_duration)
-        elif action == "back":
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "back":
             print("命令：后退")
             self.robot_controller.back(fine_duration)
-        elif action == "give hand":
+            return "assets/voice/dog/dog_ok.wav"
+        elif fine_action == "give hand":
             print("命令：握手")
             self.robot_controller.give_hand()
+            return "assets/voice/dog/dog_give_hand.wav"
         else:
             print(f"警告：无命令: {action}")
 
@@ -475,12 +518,14 @@ if __name__ == "__main__":
 
     # 创建语音助手实例
     assistant = VoiceAssistant(memory_manager,robot_controller)
-    assistant.start()
-    speech_engine = SpeechEngine(memory_manager)
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        assistant.stop()
-        print("语音助手已停止")
+
+    tmp = assistant.execute_action("","前进5秒")
+    # assistant.start()
+    # speech_engine = SpeechEngine(memory_manager)
+    # try:
+    #     while True:
+    #         time.sleep(1)
+    # except KeyboardInterrupt:
+    #     assistant.stop()
+    #     print("语音助手已停止")
 

@@ -152,10 +152,11 @@ class SpeechEngine:
                     speech_queue.put((p, t, a))
 
                 if highest_audio and os.path.exists(highest_audio):
-                    print(f"播放音频文件: {highest_audio}")
-                    runSpeaking.set()
-                    playsound(highest_audio)
-                    runSpeaking.clear()
+                    pass
+                #     print(f"播放音频文件: {highest_audio}")
+                #     runSpeaking.set()
+                #     playsound(highest_audio)
+                #     runSpeaking.clear()
                 elif highest_text:
                     print(f"[TTS进程] TTS 发声: {highest_text}")
 

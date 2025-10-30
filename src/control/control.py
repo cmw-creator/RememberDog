@@ -4,6 +4,7 @@ import socket
 import struct
 import time
 import threading
+import logging
 
 
 class HeartBeat:  # 心跳包
@@ -13,11 +14,53 @@ class HeartBeat:  # 心跳包
         self.heart_task = threading.Thread(target=self.send_heartbeat)
         self.heart_task.start()
 
+    import socket
+    import struct
+    import time
+    import logging
+
     def send_heartbeat(self):
+        """
+        发送心跳包，出现网络异常时自动重试并重建socket。
+        """
+        backoff = 1  # 初始退避时间（秒）
+        max_backoff = 30  # 最大退避时间
+        data = struct.pack("<3i", 0x21040001, 0, 0)
+
         while True:
-            data = struct.pack("<3i", 0x21040001, 0, 0)
-            self.udp_socket.sendto(data, self.send_addr)
-            time.sleep(0.5)  # sending command frequency not lower than 2HZ
+            try:
+                # 尝试发送心跳
+                self.udp_socket.sendto(data, self.send_addr)
+                # 发送成功后重置退避时间
+                backoff = 1
+                time.sleep(0.5)  # 不低于 2Hz 的发送频率
+
+            except OSError as e:
+                # 捕获网络错误
+                logging.warning(f"[Heartbeat] Network error ({e.errno}): {e}")
+
+                # 如果网络不可达或其他严重错误，尝试重建 socket
+                if e.errno in (101, 10051):  # Network is unreachable (Linux / Windows)
+                    try:
+                        self.udp_socket.close()
+                    except Exception:
+                        pass
+
+                    try:
+                        # 重新创建 UDP socket
+                        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        logging.info("[Heartbeat] Recreated UDP socket after network error.")
+                    except Exception as e2:
+                        logging.error(f"[Heartbeat] Failed to recreate socket: {e2}")
+
+                # 退避等待，避免过快重试
+                logging.info(f"[Heartbeat] Retrying after {backoff:.1f}s...")
+                time.sleep(backoff)
+                backoff = min(backoff * 2, max_backoff)  # 指数退避上限30秒
+
+            except Exception as e:
+                # 捕获其他非网络异常
+                logging.exception(f"[Heartbeat] Unexpected error: {e}")
 
 
 def time_display() -> str:
