@@ -33,7 +33,7 @@ class VoiceAssistant:
         self.rate = 16000
         self.channels = 1
         self.format = pyaudio.paInt16
-        self.chunk = 8192
+        self.chunk = 512
 
         # 音频增强参数
         self.rnnoise = RNNoise(sample_rate=48000)
@@ -190,6 +190,7 @@ class VoiceAssistant:
         def on_event(self, result):
             s = result.get_sentence()
             current_text = s.get("text", "").strip() if s is not None else ""
+            print("get_sentence:",current_text)
 
             if not current_text:
                 return
@@ -289,8 +290,8 @@ class VoiceAssistant:
             sample_rate=self.rate,
             callback=callback,
             language_hints=["zh"],
-            semantic_punctuation_enabled=True,
-            max_sentence_silence=400
+            semantic_punctuation_enabled=False,
+            max_sentence_silence=300
         )
         recognition.start()
 

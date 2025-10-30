@@ -189,7 +189,7 @@ if __name__ == '__main__':
     
     memory_manager = MemoryManager()
     speech_engine = SpeechEngine(memory_manager)
-    cam_manager = CameraManager()
+    cam_manager = CameraManager(0)
     cam_manager.start()
     time.sleep(0.5)
     

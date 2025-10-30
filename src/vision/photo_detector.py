@@ -21,9 +21,9 @@ class PhotoDetector:
         self.flann = self._create_flann_matcher()
         
         # 改进的匹配参数
-        self.min_match_count = 50  # 降低最小匹配点数，但结合更严格的验证
-        self.ratio_threshold = 0.6  # 更严格的Lowe's ratio测试阈值[5](@ref)
-        self.ransac_threshold = 5.0  # RANSAC重投影误差阈值
+        self.min_match_count = 80  # 降低最小匹配点数，但结合更严格的验证
+        self.ratio_threshold = 0.4  # 更严格的Lowe's ratio测试阈值[5](@ref)
+        self.ransac_threshold = 3.0  # RANSAC重投影误差阈值
         
         # 参考图像数据
         self.reference_images = []
@@ -224,7 +224,7 @@ class PhotoDetector:
         match_result = None
         debug_img = None
         
-        if best_match is not None and best_quality > 25:  # 质量阈值
+        if best_match is not None and best_quality > 50:  # 质量阈值
             match_result = {
                 'name': best_match['name'],
                 'match_count': best_inlier_count,
@@ -341,7 +341,7 @@ if __name__ == '__main__':
     from memory.memory_manager import MemoryManager
     from speech.speech_engine import SpeechEngine
     
-    cam_manager = CameraManager()
+    cam_manager = CameraManager(0)
     cam_manager.start()
 
     memory_manager = MemoryManager()
