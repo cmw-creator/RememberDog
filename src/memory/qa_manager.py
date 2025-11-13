@@ -25,6 +25,8 @@ class QAManager:
                 data = json.load(f)
                 self.questions = [q["question"] for q in data.get("questions", [])]
                 self.answers = [q["answer"] for q in data.get("questions", [])]
+                self.audio_file = [q["audio_file"] for q in data.get("questions", [])]
+                self.command = [q["command"] for q in data.get("questions", [])]
         else:
             self.questions, self.answers = [], []
 
@@ -63,8 +65,10 @@ class QAManager:
         scores, indices = self.index.search(emb, top_k)
         best_score = scores[0][0]
         best_idx = indices[0][0]
-
+        best_audio_file = self.audio_file[best_idx]
+        best_command    = self.command[best_idx]
         if best_score >= threshold:
-            return self.answers[best_idx], float(best_score)
+            return self.answers[best_idx], float(best_score),best_audio_file,best_command
         else:
-            return "我暂时不知道怎么回答", float(best_score)
+            return "我暂时不知道怎么回答", float(best_score), None, "No Answer"
+            # return "原神！启动！", float(best_score), None, None

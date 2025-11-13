@@ -1,0 +1,10 @@
+opencv-contrib-python>=4.11.0
+numpy>=1.26
+pyzbar>=0.1.9
+pillow>=11.0.0
+pyttsx3>=2.90
+dlib
+mediapipe>=0.10.0
+requests>=2.26
+pyrnnoise
+dashscope>=1.25

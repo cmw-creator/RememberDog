@@ -343,7 +343,11 @@ class VoiceAssistant:
                 print("stream read出错:", e)
 
             if not self.memory_manager.runSpeaking.is_set():
-                recognition.send_audio_frame(raw) #发送
+                try:
+                    recognition.send_audio_frame(raw) #发送
+                except:
+                    print("Network Warining")
+                    time.sleep(0.1)
                 # time.sleep(0.1)
 
 

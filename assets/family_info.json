@@ -1,124 +1,140 @@
 {
   "questions": [
     {
-      "question": "我的女儿是是谁",
-      "answer": "您的女儿是小芳，她昨天来看过你呢。",
+      "question": "你好，小影。",
+      "answer": "你好呀，我是小影。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/my_daughter_is.mp3"
+      "audio_file": "assets/voice/dog/dog_start.wav",
+      "command":"hello"
     },
     {
-      "question": "我的孙子的名字是",
-      "answer": "您的孙子是小宇，他今年9岁了，在阳光实验小学读三年级。",
+      "question": "小影,趴下。",
+      "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/my_grandson_name.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"lie down"
     },
     {
-      "question": "我的最喜欢的家乡菜是什么",
-      "answer": "您最喜欢红烧肉。",
+      "question": "下面展示照片识别",
+      "answer": "这是您参加社区书法比赛获得一等奖的作品和照片。您的楷书写得工整有力，评委们都说很有颜真卿的风骨。您从六十岁开始学习书法，每天坚持练习两个小时，这份坚持和毅力真是令人敬佩。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/favorite_hometown_dish.mp3"
+      "audio_file": "assets/voice/photo/photo_00001.wav",
+      "command":"photo"
     },
     {
-      "question": "我的出生在哪个城市？",
-      "answer": "您出生在北京。",
+      "question": "小影,站起来。",
+      "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/birth_city.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"stand up"
     },
     {
-      "question": "我家在哪？",
-      "answer": "您家在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
+      "question": "开启演示模式",
+      "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/home_address.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"play on"
     },
     {
-      "question": "我家的地址在哪？",
-      "answer": "您家的地址在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
+      "question": "关闭演示模式",
+      "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/home_address_detail.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"play off"
     },
     {
-      "question": "我女儿的家在哪？",
-      "answer": "您女儿家在南京市玄武区南京理工大学竹园小区1栋102，需要我帮你带路吗？",
+      "question": "小影，往前走。",
+      "answer": "好的，前进。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/daughter_home.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"forward"
     },
     {
-      "question": "我女儿住在哪？地址是什么？",
-      "answer": "您女儿家的地址在南京市玄武区南京理工大学竹园小区1栋202，需要我帮你带路吗？",
+      "question": "小影，往后走。",
+      "answer": "好的，后退。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/daughter_address.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"back"
     },
     {
-      "question": "谢谢你小影",
-      "answer": "不用谢！能陪您聊天是我的荣幸，您有什么想说的尽管告诉我。",
+      "question": "小影，左转。",
+      "answer": "好的，左转。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/thanks_xiaoying.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"turn left"
     },
     {
-      "question": "我今天心情不好",
-      "answer": "别难过，要不要听听轻音乐？或者我给小芳打个电话让她来陪您？",
+      "question": "小影，右转。",
+      "answer": "好的，右转。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/sad_today.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"turn right"
     },
     {
-      "question": "我想听个笑话",
-      "answer": "好的！为什么数学书总是很忧郁？——因为它有太多问题要解决！",
+      "question": "小影，握一下手。",
+      "answer": "好的。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/joke.mp3"
+      "audio_file": "assets/voice/dog/dog_give_hand.wav",
+      "command":"give hand"
     },
     {
-      "question": "给我讲个故事",
-      "answer": "想听您小时候在北京胡同里的故事呢！您愿意给我讲讲吗？",
+      "question": "小影，转个圈吧。",
+      "answer": "好的。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/story.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"go round"
     },
     {
-      "question": "我的女儿小芳的电话号码是多少？",
-      "answer": "您的女儿小芳的电话是123 4567 8967",
+      "question": "小影，到别的地方去。",
+      "answer": "好的，我走啦，有事叫我。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/daughter_phone.mp3"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"leave"
     },
     {
-      "question": "我的电话号码是多少？",
-      "answer": "您的女儿小芳的电话是124 3567 9867",
+      "question": "小影，我记不清我女儿家了，她家在哪？",
+      "answer": "您女儿家在南京市玄武区南京理工大学竹园小区一栋二楼，需要我帮你带路吗？",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/my_phone.mp3"
+      "audio_file": "assets/voice/dog/qa_00001.wav",
+      "command": "navigate"
     },
     {
-      "question": "你是谁",
-      "answer": "我是你的狗狗小影，快来和我说话吧",
+      "question": "我是不是有个孙女，他今年多大了？",
+      "answer": "您的孙女是小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/who_are_you.mp3"
+      "audio_file": "assets/voice/dog/qa_00002.wav",
+      "command": "info"
     },
     {
-      "question": "你叫什么名字",
-      "answer": "我叫小影呀，快来和我说话吧",
+      "question": "我想给我女儿打个电话",
+      "answer": "正在为您搜索，您女儿的电话是13627931054。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/your_name.mp3"
+      "audio_file": "assets/voice/dog/qa_00003.wav",
+      "command": "call"
     },
     {
-      "question": "小影是谁",
-      "answer": "我就是小影呀，快来和我说话吧",
+      "question": "我想听我女儿的声音",
+      "answer": "爷爷，最近身体怎么样，腰还疼吗？我有时间就来看您。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/xiaoying_who.mp3"
+      "audio_file": "assets/voice/people/woman.wav",
+      "command": "play_daughter_voice",
+      "voice_model": "woman1"
     },
     {
-      "question": "早上好。",
-      "answer": "早上好。",
+      "question": "我想听我儿子的声音",
+      "answer": "爷爷，您最近身体怎么样呀？天气时冷时热的，您可得多注意，及时添减衣服。我这边一切都好，工作生活都挺顺利的，就是特别想您。您有空就给我打个电话。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/good_morning.mp3"
+      "audio_file": "assets/voice/people/man.wav",
+      "command": "play_son_voice",
+      "voice_model": "male_su"
     },
     {
-      "question": "晚上好。",
-      "answer": "晚上好。",
+      "question": "下面演示吃药提醒。",
+      "answer": "小影温馨提示：下午五点钟该吃降血糖药啦。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/good_evening.mp3"
-    },
-    {
-      "question": "下午好。",
-      "answer": "下午好。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "audio/good_afternoon.mp3"
+      "audio_file": "assets/voice/dog/eat_medicine.wav",
+      "command": "play_son_voice",
+      "voice_model": "male_su"
     }
   ]
 }

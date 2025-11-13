@@ -32,7 +32,7 @@ class FaceDetector:
         self.camera_manager = camera_manager #使用的摄像头
         self.memory_manager = memory_manager # 添加 memory_manager 引用
         # 性能优化
-        self.frame_skip = 50  # 如果为2，则每3帧处理1帧
+        self.frame_skip = 50  # 如果为2，则每3帧处理1帧 50ms/帧
         self.frame_count = 0
 
         self.recently_processed = {}  # 记录最近处理的二维码和时间戳
@@ -88,7 +88,7 @@ class FaceDetector:
         while True:
             self.frame_count += 1
             if self.frame_count % self.frame_skip != 0:
-                time.sleep(0.01)
+                time.sleep(0.05)
                 continue  # 跳过部分帧以降低计算负载
             
             
@@ -100,7 +100,7 @@ class FaceDetector:
                 cv_image_rgb = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
                 #print("人脸识别")
                 # 人脸检测
-                faces = self.detector(cv_image_rgb, 0)  # 不进行上采样（速度优先）
+                faces = self.detector(cv_image_rgb, 1)  # 不进行上采样（速度优先）
                 
                 for face in faces:
                     # 关键点检测与特征提取
@@ -120,6 +120,12 @@ class FaceDetector:
                     # 发布识别结果
                     result_msg = f"识别结果:{match_name} (可信度: {1 - min_distance:.2f})"
                     print(result_msg)
+
+                    if (1 - min_distance) <=0.6:
+                        print("忽略人脸")
+                        continue
+
+                    
                     
                     # 在图像上绘制结果（调试用）
                     x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()

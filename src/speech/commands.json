@@ -1,0 +1,52 @@
+{
+  "commands": [
+    {
+      "pattern": "过来",
+      "action": "come"
+    },
+    {
+      "pattern": "走开",
+      "action": "leave"
+    },
+    {
+      "pattern": "吃药",
+      "action": "medicine_remind"
+    },
+    {
+      "pattern": "提醒",
+      "action": "add_reminder"
+    },
+    {
+      "pattern": "问题",
+      "action": "add_question"
+    },
+    {
+      "pattern": "停止",
+      "action": "stop"
+    },
+    {
+      "pattern": "开始",
+      "action": "start"
+    },
+    {
+      "pattern": "帮助",
+      "action": "help"
+    },
+    {
+      "pattern": "我要去",
+      "action": "goto"
+    }
+  ],
+  "responses": {
+    "greeting": [
+      "您好",
+      "嗨",
+      "hello"
+    ],
+    "unknown": [
+      "我没有听懂，请再说一次",
+      "抱歉，我不明白",
+      "请重复一遍"
+    ]
+  }
+}
