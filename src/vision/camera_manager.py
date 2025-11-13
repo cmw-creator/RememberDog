@@ -5,7 +5,7 @@ from collections import deque
 import os
 
 class CameraManager:
-    def __init__(self, camera_id="rtsp://192.168.1.120:8554/test", width=800, height=600, save_dir="frames", max_frames=100):
+    def __init__(self, camera_id="rtsp://192.168.1.120:8554/test", width=800, height=600, save_dir="frames", max_frames=10):
         """初始化摄像头管理器
         
         Args:
@@ -60,10 +60,10 @@ class CameraManager:
                 with self.frame_lock:
                     self.current_frame = frame.copy()
                     # 添加到缓存
-                    self.frame_buffer.append(frame.copy())
+                    #self.frame_buffer.append(frame.copy())
                     # 保存到磁盘（可选）
-                    filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
-                    cv2.imwrite(filename, frame)
+                    #filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
+                    #cv2.imwrite(filename, frame)
             time.sleep(0.02)
 
     def get_frame(self):
@@ -98,7 +98,7 @@ class CameraManager:
 
 if __name__ == "__main__":
     print("摄像头测试")
-    camera_manager = CameraManager()
+    camera_manager = CameraManager(0)
     camera_manager.start()
     try:
         while True:

@@ -192,7 +192,7 @@ if __name__ == '__main__':
     from memory.memory_manager import MemoryManager
     from speech.speech_engine import SpeechEngine
     
-    cam_manager=CameraManager()
+    cam_manager=CameraManager(0)
     cam_manager.start()
 
     memory_manager = MemoryManager()
