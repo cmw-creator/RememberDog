@@ -376,6 +376,10 @@ class VoiceAssistant:
                 command=fine_action
                 duration=fine_duration
 
+        for c in self.commands_db["commands"]:
+            if c["action"]==command:
+                self.execute_action(command["action"], text)
+                break
 
         # 触发语音事件，兼容 speak_text / audio_file
 
@@ -406,12 +410,10 @@ class VoiceAssistant:
             self.handle_add_reminder(text)
         elif action == "add_question":
             self.handle_add_question(text)
-        elif action == "stop":
-            self.listening = False
-            print("已停止监听")
-        elif action == "start":
-            self.listening = True
-            print("开始监听")
+        elif action == "stand up":
+            print("动作：狗站起来")
+        elif action == "go round":
+             print("动作：狗转个圈")
         elif action == "help":
             print("我可以帮您添加提醒、设置问题、控制机器狗行动")
         elif action == "stand up":
@@ -494,6 +496,18 @@ class VoiceAssistant:
             self.tts_process.terminate()
             self.tts_process.join(timeout=2)
 
+        # 发送停止信号到 TTS 进程
+        try:
+            self.speech_queue.put(None, timeout=1)
+        except:
+            pass
+
+        # 等待 TTS 进程结束
+        if self.tts_process.is_alive():
+            self.tts_process.terminate()
+            self.tts_process.join(timeout=2)
+
+        print("语音助手已停止")
 
 # 使用示例
 if __name__ == "__main__":
@@ -526,4 +540,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         assistant.stop()
         print("语音助手已停止")
-
