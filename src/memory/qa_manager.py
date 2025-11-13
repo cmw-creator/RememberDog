@@ -45,6 +45,7 @@ class QAManager:
         embeddings = self.model.encode(self.questions, convert_to_numpy=True, normalize_embeddings=True)
         self.index = faiss.IndexFlatIP(self.dimension)  # 内积相似度（余弦）
         self.index.add(embeddings)
+        print("向量索引已构建")
 
     def add_qa(self, question, answer):
         """新增Q&A并更新索引"""

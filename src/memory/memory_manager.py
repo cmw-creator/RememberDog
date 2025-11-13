@@ -3,10 +3,8 @@ import random
 import time
 import threading
 import os
-from datetime import datetime, timedelta
-from multiprocessing import Process, Queue as MPQueue, Manager
+from datetime import datetime
 import multiprocessing
-import pyttsx3
 from memory.qa_manager import QAManager
 
 class MemoryManager:
