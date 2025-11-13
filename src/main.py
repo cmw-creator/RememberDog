@@ -1,24 +1,15 @@
 import time
 start_time = time.time()
 from vision.camera_manager  import  CameraManager
-print("[time0.1]",time.time()-start_time)
 from vision.qr_code_detector  import  QRCodeDetector
-print("[time0.2]",time.time()-start_time)
 from vision.face_detector  import  FaceDetector
-print("[time0.3]",time.time()-start_time)
 from vision.photo_detector  import  PhotoDetector
-print("[time0.4]",time.time()-start_time)
 from vision.pose           import FallDetector
-print("[time0.5]",time.time()-start_time)
 #from vision.hand_pose_estimator import HandPoseEstimator
 from speech.voice_assistant import VoiceAssistant
-print("[time0.6]",time.time()-start_time)
 from memory.memory_manager import MemoryManager 
-print("[time0.7]",time.time()-start_time)
 from speech.speech_engine import SpeechEngine
-print("[time0.8]",time.time()-start_time)
 from control.control import RobotController
-print("[time0.9]",time.time()-start_time)
 import threading
 import time
 print("[time1]",time.time()-start_time)
