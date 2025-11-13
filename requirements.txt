@@ -6,5 +6,5 @@ pyttsx3>=2.90
 dlib
 mediapipe>=0.10.0
 requests>=2.26
-pyrnnoise
+pyrnnoise>=0.4.0
 dashscope>=1.25
