@@ -176,6 +176,8 @@ if __name__ == '__main__':
     print("二维码识别测试")
     import sys
     import os
+    import time
+    start_time = time.time()
     
     # 添加项目根目录到Python路径
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -185,13 +187,15 @@ if __name__ == '__main__':
     from memory.memory_manager import MemoryManager
     from vision.camera_manager import CameraManager
     from speech.speech_engine import SpeechEngine
-
+    print("[time]",time.time()-start_time)
     
     memory_manager = MemoryManager()
     speech_engine = SpeechEngine(memory_manager)
     cam_manager = CameraManager(0)
     cam_manager.start()
+    print("[time]",time.time()-start_time)
     time.sleep(0.5)
     
     qr_code_detector = QRCodeDetector(cam_manager, memory_manager)
     qr_code_detector.run_detection()
+    print("[time]",time.time()-start_time)
