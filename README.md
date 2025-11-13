@@ -1,77 +1,104 @@
-from vision.camera_manager  import  CameraManager
-from vision.qr_code_detector  import  QRCodeDetector
-from vision.face_detector  import  FaceDetector
-#from vision.photo_detector  import  PhotoDetector
-#from vision.hand_pose_estimator import HandPoseEstimator
-#from speech.voice_assistant import VoiceAssistant
-from memory.memory_manager import MemoryManager 
-#from speech.speech_engine import SpeechEngine
-import threading
-import time
+## 应用场景
 
-from memory.qa_manager import QAManager
+一个基于绝影lite3机器狗的奥兹海默患者陪伴犬
 
-def main():
-    # 创建记忆管理器
-    memory_manager = MemoryManager()
-    #创建语音引擎
-    #speech_engine = SpeechEngine(memory_manager)
+症状：
 
-    # 创建摄像头管理器
-    cam_manager = CameraManager("rtsp://192.168.1.120:8554/test") #狗上使用
-    #cam_manager = CameraManager(0) #在自己笔记本上测试
-    cam_manager.start()
+- **轻度**：近事遗忘（如忘记约定）、语言障碍（找词困难）、判断力下降，生活尚能自理
+- **中度**：远/近期记忆均严重受损，定向障碍（迷路）、情绪异常（焦虑、幻觉），需他人照料
+- **重度**：完全丧失记忆和自理能力。
 
-    # 创建检测器
-    qr_detector = QRCodeDetector(cam_manager,memory_manager)
-    face_detector=FaceDetector(cam_manager,memory_manager)
-    #photo_detector=PhotoDetector(cam_manager,memory_manager)
-    # 创建手部姿态检测器
-    '''
-    hand_estimator = HandPoseEstimator(
-        cam_manager,
-        memory_manager,
-        model_path="./assets/handpose_x/weights/squeezenet1_1-size-256-loss-0.0732.pth",   #轻量模型
-        model='squeezenet1_1',
-        num_classes=42,
-        GPUS='0',
-        img_size=(256, 256)
-    )
-    '''
-    #voice_assistant = VoiceAssistant(memory_manager)
-    
+## 机器狗已经有的硬件和功能：
 
-    # 注册模块状态
-    memory_manager.update_module_status("QRCodeDetector", "initialized")
-    memory_manager.update_module_status("FaceDetector", "initialized")
-    memory_manager.update_module_status("PhotoDetector", "initialized")
-    memory_manager.update_module_status("HandPoseEstimator", "initialized")
-    memory_manager.update_module_status("VoiceAssistant", "initialized")
-    qr_detector.run()
+1.带有陀螺仪加速度计，行走距离传感器，有扬声器。
 
-    # 为每个检测器创建单独的线程
-    qr_thread = threading.Thread(target=qr_detector.run_detection, name="QR_Detector")
-    face_thread = threading.Thread(target=face_detector.run_detection, name="Face_Detector")
-    #photo_thread = threading.Thread(target=photo_detector.run_detection, name="Photo_Detector")
-    #hand_thread = threading.Thread(target=hand_estimator.run_estimation, name="Hand_Pose_Estimator")
-    
-    # 启动所有线程
-    #qr_thread.start()
-    face_thread.start()
-    #photo_thread.start()
-    #hand_thread.start()
-    #memory_manager.start()#内部创造线程了
-    #voice_assistant.start()#内部创造线程了
+2.带有广角相机一台，深度相机一台
 
-    # 更新模块状态为运行中
-    memory_manager.update_module_status("QRCodeDetector", "running")
-    memory_manager.update_module_status("FaceDetector", "running")
-    memory_manager.update_module_status("PhotoDetector", "running")
-    memory_manager.update_module_status("HandPoseEstimator", "running")
-    memory_manager.update_module_status("VoiceAssistant", "running")
-    memory_manager.update_module_status("MemoryManager", "running")
-    memory_manager.update_module_status("SpeechEventHandler", "running")
-    
-if __name__ == '__main__':
-    main()
-    time.sleep(10000)
+3.可实现机器狗的精确移动
+
+4.带有英伟达nx计算板，可以连网。
+
+5.ros 1 环境
+
+## 实现的功能：
+
+#### **抗遗忘**（主要）
+
+**被动**：
+
+1.人脸、景物、二维码或条形码识别（pyzbar库）
+
+2.根据识别内容，发出储存的音频或 将要说的文字转语音，并且可发出熟悉人的声音，唤醒情景记忆。
+
+例：
+
+​    例：将人物照片放在狗前                 回复：人物关系/人物往事
+
+​    例：将所拍的风景照放在狗前         回复：与景物相关的往事
+
+​    例：将贴有二维码的药瓶放在狗前 回复：什么药+服用时间
+
+3.询问获得对应的信息、往事，唤醒记忆（处理考虑是否用ai或是关键词识别）
+
+​    例：我的孩子是什么时候出生的？ 答：xx月xx日
+
+​    例：下午要干什么事？     答：下午5点需要xxx
+
+**主动**
+
+1.随机问答触发
+
+​    机器狗定时（如每日固定时段）主动提问患者，问题基于预设的家庭信息库（如"您女儿的名字是？""您最喜欢的家乡菜是什么？"），增强记忆。
+
+2.定时提醒
+
+​    2.1定时用药提醒：提供语音播报
+
+​    2.2定时事件提醒
+
+​        例：明天下午提醒我做什么事。 
+
+#### **交互与陪伴**
+
+1.识别手势动作，完成“过来，走开等”的功能
+
+2.增加麦克风，实现唤醒功能，并完成语音聊天、交互？
+
+#### **环境感知与安全监护**
+
+1.环境信息采集：采集环境视频音频，向亲人远程报告异常情况（异常噪声，呼救，跌倒...）
+
+~~2.跌倒识别？~~
+
+#### **远程监护与控制**
+
+1.远程查看功能，可以让在外的亲人实时控制机器狗并且查看内容（自带的app直接能用，但要考虑远程场景）
+
+
+
+~~以下暂不实现：~~
+
+~~1.跟随功能，如果要外出，可实现跟随功能？~~
+
+~~2.增加usb gps模块，实现定位功能？~~
+
+~~3.智能家居支持？~~
+
+~~4.识别易摔倒，易磕碰的地方并发出预警？~~
+
+
+
+## 功能演示
+
+
+
+## **参考项目**
+
+[ligen131/remember-me： 帮助阿尔兹海默症患者回忆过往与记录生活。](https://github.com/ligen131/remember-me)利用在线ai的往事记忆储存检索的方案
+
+[RVC-Boss/GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)文字转语音
+
+[XIAN-HHappy/handpose_x: 手部21个关键点检测，二维手势姿态，手势识别](https://github.com/XIAN-HHappy/handpose_x?tab=readme-ov-file)
+
+
+
