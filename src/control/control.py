@@ -15,15 +15,11 @@ class HeartBeat:  # 心跳包
         self.heart_task = threading.Thread(target=self.send_heartbeat)
         self.heart_task.start()
 
-    import socket
-    import struct
-    import time
-    import logging
-
     def send_heartbeat(self):
         """
         发送心跳包，出现网络异常时自动重试并重建socket。
         """
+        logger.info("[Heartbeat] 开始发送心跳包")
         backoff = 1  # 初始退避时间（秒）
         max_backoff = 30  # 最大退避时间
         data = struct.pack("<3i", 0x21040001, 0, 0)

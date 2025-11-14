@@ -71,7 +71,7 @@ class VoiceAssistant:
 
     def load_commands_db(self):
         """加载本地命令数据库"""
-        path = "assets/voice_commands/commands.json"
+        path = "assets/commands.json"
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
 

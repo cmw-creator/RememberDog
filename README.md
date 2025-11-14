@@ -24,14 +24,17 @@ pip install -r requirements.txt
 conda install -c conda-forge dlib
 ```
 
-4. 运行主程序
+4. 下载模型文件
+    - 下载paraphrase-multilingual-MiniLM-L12-v2模型文件并且将其放在assets目录下。
+
+5. 运行主程序
 
 
 ```bash
 python src/main.py
 ```
 
-5. 更改运行日志等级
+6. 更改运行日志等级
    - 默认日志等级为INFO，若需查看DEBUG信息，可在main.py中修改：
 
 
