@@ -122,9 +122,10 @@ class QRCodeDetector:
         if self.frame_count % self.frame_skip != 0:
             time.sleep(0.05)
             return  # 跳过部分帧以降低计算负载
-
+        logger.debug(f"二维码识别一次")
         frame = self.camera_manager.get_frame()
         if frame is None:
+            logger.warning(f"二维码识别，未获取到图片")
             time.sleep(0.1)
             return
         
@@ -158,12 +159,7 @@ class QRCodeDetector:
         # 清理过期的记录
         if self.frame_count % 60 == 0:  # 每30帧清理一次
             self.cleanup_old_entries()
-            
-        # 显示实时画面（调试用）
-        # cv2.imshow('QR/Barcode Detection', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            return
-            
+        logger.debug(f"图片识别完成一次")
         time.sleep(0.1)  # 减少识别频次
             
     def run_detection(self):

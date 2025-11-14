@@ -21,22 +21,12 @@ from control.control import RobotController
 import threading
 import time
 import sys
-logger.debug("import 完成")
-
-# 推荐：在程序最开始就禁用 tokenizers 并行或设置启动方法
-# os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-# from memory.qa_manager import QAManager
-# multiprocessing.set_start_method('spawn', force=True)
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-#管理机器狗动作
-robot_controller=RobotController()
-# 创建摄像头管理器
-
-
-logger.debug("全局变量初始化完成")
+logger.debug("main导入完成")
 
 def main():
+    #管理机器狗动作
+    robot_controller=RobotController()
+    # 创建摄像头管理器
     def get_camera_source():
         if sys.platform.startswith('win'): 
             # Windows 系统
@@ -50,7 +40,7 @@ def main():
             # 其他未知系统，可以返回一个默认值或抛出异常
             logger.warning(f"不支持的操作系统: {sys.platform}，使用默认值0")
             return 0
-    cam_manager = CameraManager(get_camera_source()) #在自己笔记本上测试
+    cam_manager = CameraManager(get_camera_source())
     # 创建记忆管理器
     memory_manager = MemoryManager()
     # 创建语音引擎
@@ -93,9 +83,21 @@ def main():
     #hand_thread.start()
     memory_manager.start()#内部创造线程了
     voice_assistant.start()#内部创造线程了
+
+def test_cpu(start_time,times):
+    logger.debug("测试CPU负载函数")
+    times.append((time.time()-start_time)*1000)
+    if len(times)>=10:
+        times.pop(0)
+    logger.debug(f"CPU负载测试耗时: {sum(times)/len(times):.5f}ms")
+
 if __name__ == '__main__':
     main()
+    start_time = time.time()
+    times=[]
+    while True:
+        test_cpu(start_time,times)
+        time.sleep(1)
+        start_time=time.time()
     time.sleep(10000)
-
-    
-    
+    logger.debug("程序超时结束运行")

@@ -1,3 +1,40 @@
+## 运行
+1. 配置环境
+
+   - 确保安装了Python 3.9或以上版本
+   - 建议使用conda环境管理工具，创建一个新的环境并激活它：
+
+```bash
+conda create -n py39_dog python=3.9
+conda activate py39_dog
+```
+
+2. 克隆代码库到本地
+
+```bash
+git clone https://github.com/wcm-creator/RememberDog.git
+cd RememberDog
+pip install -r requirements.txt
+```
+
+3. 对于dlib库的安装问题，如果pip安装失败，建议使用conda安装：
+
+
+```bash
+conda install -c conda-forge dlib
+```
+
+4. 运行主程序
+
+
+```bash
+python src/main.py
+```
+
+5. 更改运行日志等级
+   - 默认日志等级为INFO，若需查看DEBUG信息，可在main.py中修改：
+
+
 ## 应用场景
 
 一个基于绝影lite3机器狗的奥兹海默患者陪伴犬
@@ -89,6 +126,9 @@
 
 
 ## 功能演示
+
+
+## 代码结构
 
 
 

@@ -93,7 +93,7 @@ class FaceDetector:
             if self.frame_count % self.frame_skip != 0:
                 time.sleep(0.05)
                 continue  # 跳过部分帧以降低计算负载
-            
+            logger.debug(f"人脸识别一次")
             
             try:
                 # 转换ROS图像消息为OpenCV格式
@@ -170,7 +170,7 @@ class FaceDetector:
 
                             self.memory_manager.trigger_event("speak_event", event_payload)
                     time.sleep(1)#防止一直识别成功
-
+                logger.debug(f"人脸识别完成一次")
                 # 清理过期的记录
                 if self.frame_count % 60 == 0:  # 每60帧清理一次
                     self.cleanup_old_entries()

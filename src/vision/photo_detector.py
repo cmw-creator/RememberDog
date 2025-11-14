@@ -285,7 +285,9 @@ class PhotoDetector:
             if self.frame_count % self.frame_skip != 0:
                 time.sleep(0.05)
                 continue
-                
+            
+            logger.debug(f"图片识别一次")
+
             frame = self.camera_manager.get_frame()
             
             match_result, debug_img = self.match_scene(frame)
@@ -329,10 +331,10 @@ class PhotoDetector:
                         "timestamp": time.time()
                     })
                 
-                time.sleep(1)
+                time.sleep(1)#防止一直识别成功
             else:
                 pass
-            
+            logger.debug(f"图片识别完成一次")
             if self.frame_count % 60 == 0:
                 self.cleanup_old_entries()
 

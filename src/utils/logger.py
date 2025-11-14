@@ -21,7 +21,7 @@ class Logger:
             
             # 设置日志格式
             formatter = logging.Formatter(
-                '%(asctime)s %(levelname)s [%(filename)s:%(lineno)d]: %(message)s',
+                '%(asctime)s.%(msecs)03d %(levelname)s [%(filename)s:%(lineno)d]: %(message)s',
                 datefmt='%Y-%m-%d %H:%M:%S'
             )
             

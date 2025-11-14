@@ -55,6 +55,7 @@ class CameraManager:
 
     def _capture_frames(self):
         """内部方法：持续捕获帧"""
+        frame_count = 0
         while self.running:
             for _ in range(2):
                 self.camera.grab()  # 清空缓冲区
@@ -62,6 +63,7 @@ class CameraManager:
             ret, frame = self.camera.retrieve()
             if ret:
                 with self.frame_lock:
+                    frame_count += 1
                     self.current_frame = frame.copy()
                     # 添加到缓存
                     #self.frame_buffer.append(frame.copy())
@@ -70,6 +72,10 @@ class CameraManager:
                         filename = os.path.join(self.save_dir, f"{int(time.time()*1000)}_frame_debug.jpg")
                         cv2.imwrite(filename, frame)
                         logger.debug(f"保存调试帧: {filename}")
+            else:
+                logger.warning(f"未获取到有效帧，跳过")
+            if frame_count % 10 == 0:
+                logger.debug(f"已获取 {frame_count} 帧")
             time.sleep(0.02)
 
     def get_frame(self):
