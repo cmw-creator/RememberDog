@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # speech_event_handler_web_dynamic.py - 语音事件处理器 + 最近3句话动态网页显示
-
-import pyttsx3
-import threading
 import time
-import queue
-import os
-from multiprocessing import Process, Queue as MPQueue, Manager
-from playsound import playsound
+from multiprocessing import Process, Queue as MPQueue
 from flask import Flask, render_template_string, jsonify
 
 class SpeechEngine:
@@ -27,22 +21,18 @@ class SpeechEngine:
 
         # 注册事件回调
         self.memory_manager.register_event_callback("speak_event", self.speak_event, "SpeechEventHandler")
-        self.memory_manager.register_event_callback("medicine_detected", self.handle_medicine_event,
-                                                    "SpeechEventHandler")
-        self.memory_manager.register_event_callback("face_detected", self.handle_face_event, "FaceEventHandler")
-        self.memory_manager.register_event_callback("photo_detected", self.handle_photo_event, "FaceEventHandler")
 
 
         self.speech_queue = MPQueue()
-
+        #self._process_sepech_queue(self.speech_queue, self.memory_manager.runSpeaking)
         # 启动独立 TTS 进程
-        self.tts_process = Process(
-            target=self._process_speech_queue,
-            args=(self.speech_queue, self.memory_manager.runSpeaking),
-            daemon=True
-        )
+        #self.tts_process = Process(
+        #    target=self._process_speech_queue,
+        #    args=(self.speech_queue, self.memory_manager.runSpeaking),
+        #    daemon=True
+        #)
         # self.tts_process = Process(target=self._process_speech_queue, args=(self.speech_queue, self.memory_manager.runSpeaking), daemon=True)
-        self.tts_process.start()
+        #self.tts_process.start()
 
 
         # 启动Flask线程
@@ -86,8 +76,10 @@ class SpeechEngine:
         audio_file = event_data.get("audio_file", None)
         print(f"添加到队列: text={text}, audio_file={audio_file}, priority={priority}")
         self.speech_queue.put((priority, text, audio_file))
-    @staticmethod
-    def _process_speech_queue(speech_queue, runSpeaking, is_speaking_flag=None, running_flag=None):
+    def _process_speech_queue(self ,running_flag=None):
+        speech_queue = self.speech_queue
+        runSpeaking = self.memory_manager.runSpeaking
+        is_speaking_flag = self.is_speaking
         import pyttsx3
         import time
         import os

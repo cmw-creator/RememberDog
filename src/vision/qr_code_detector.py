@@ -4,11 +4,9 @@
 import cv2
 import numpy as np
 import os
-from datetime import datetime
 import time
 from pyzbar.pyzbar import decode
 from PIL import Image
-import pyttsx3  # 离线TTS引擎
 import threading
 import json
 
@@ -176,22 +174,28 @@ if __name__ == '__main__':
     print("二维码识别测试")
     import sys
     import os
+    import time
+    start_time = time.time()
     
     # 添加项目根目录到Python路径
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)
     sys.path.append(project_root)
-    
     from memory.memory_manager import MemoryManager
+    print("[time]",time.time()-start_time)
     from vision.camera_manager import CameraManager
+    print("[time]",time.time()-start_time)
     from speech.speech_engine import SpeechEngine
-
+    print("[time]",time.time()-start_time)
     
     memory_manager = MemoryManager()
     speech_engine = SpeechEngine(memory_manager)
     cam_manager = CameraManager(0)
     cam_manager.start()
+    print("[time]",time.time()-start_time)
     time.sleep(0.5)
     
     qr_code_detector = QRCodeDetector(cam_manager, memory_manager)
+    print("[time]",time.time()-start_time)
     qr_code_detector.run_detection()
+    print("[time]",time.time()-start_time)
