@@ -1,9 +1,14 @@
 #控制从json中加载问答数据并向量化，包含检索功能
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载问答管理模块")
 import json
 import os
 import faiss
-import numpy as np
+#import numpy as np
 from sentence_transformers import SentenceTransformer
+logger.info("问答管理模块导入完成")
+
 
 class QAManager:
     def __init__(self, data_path="assets/family_info.json", model_name="./assets/paraphrase-multilingual-MiniLM-L12-v2"):

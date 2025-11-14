@@ -10,10 +10,12 @@ import json
 #from std_msgs.msg import String
 #from sensor_msgs.msg import Image
 #from cv_bridge import CvBridge
+import logging
+logger = logging.getLogger(name='Log')
 
 class FaceDetector:
     def __init__(self, camera_manager,memory_manager):
-        print("开始加载人脸识别")
+        logger.info("开始加载人脸识别")
         # ROS节点初始化
         #rospy.init_node('face_recognition_node', anonymous=True)
         #self.bridge = CvBridge()
@@ -84,7 +86,8 @@ class FaceDetector:
     
     def run_detection(self):# + msg
         """处理摄像头图像"""
-        print("启动人脸识别")
+        logger.info("开始加载人脸识别")
+        #print("启动人脸识别")
         while True:
             self.frame_count += 1
             if self.frame_count % self.frame_skip != 0:
@@ -119,7 +122,8 @@ class FaceDetector:
                     
                     # 发布识别结果
                     result_msg = f"识别结果:{match_name} (可信度: {1 - min_distance:.2f})"
-                    print(result_msg)
+                    #print(result_msg)
+                    logger.info("result_msg")
 
                     if (1 - min_distance) <=0.6:
                         print("忽略人脸")
@@ -146,8 +150,8 @@ class FaceDetector:
                                 else:
                                     # 兼容旧格式：直接是文本
                                     speak_text = str(face_info)
-
-                            print(f"发送识别到: {match_name} (可信度: {1 - min_distance:.2f})")
+                            #print(f"发送识别到: {match_name} (可信度: {1 - min_distance:.2f})")
+                            logger.info(f"发送识别到: {match_name} (可信度: {1 - min_distance:.2f})")
                             self.memory_manager.set_shared_data(
                                 "last_recognized_face", 
                                 {"name": match_name, "confidence": 1 - min_distance},
@@ -178,7 +182,8 @@ class FaceDetector:
                 
             except Exception as e:
                 #rospy.logerr(f"处理图像失败: {str(e)}")
-                print(f"处理图像失败: {str(e)}")
+                #print(f"处理图像失败: {str(e)}")
+                logger.error(f"处理图像失败: {str(e)}")
 
 if __name__ == '__main__':
     print("人脸识别测试")

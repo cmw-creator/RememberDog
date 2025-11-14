@@ -9,6 +9,11 @@ from pyzbar.pyzbar import decode
 from PIL import Image
 import threading
 import json
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载二维码识别")
+
+
 
 class QRCodeDetector:
     def __init__(self, camera_manager, memory_manager):
@@ -108,7 +113,8 @@ class QRCodeDetector:
             self.memory_manager.trigger_event("speak_event", event_payload)
 
         else:
-            print(f"未找到该药品信息，请联系家人更新数据库,{data}")
+            #print(f"未找到该药品信息，请联系家人更新数据库,{data}")
+            logger.error(f"未找到该药品信息，请联系家人更新数据库,{data}")
 
 
     def detection(self):
@@ -133,7 +139,8 @@ class QRCodeDetector:
         for obj in decoded_objects:
             try:
                 data = obj.data.decode('utf-8')
-                print("识别结果：", data)
+                #print("识别结果：", data)
+                logger.info(f"识别结果：{data}")
                 
                 # 检查是否应该处理这个二维码（防重复机制）
                 if self.should_process_qr(data):
@@ -145,7 +152,8 @@ class QRCodeDetector:
                         self.speak("识别到老照片，正在加载回忆...")
                         
             except Exception as e:
-                print(f"处理二维码时出错: {e}")
+                #print(f"处理二维码时出错: {e}")
+                logger.error(f"处理二维码时出错: {e}")
         
         # 清理过期的记录
         if self.frame_count % 60 == 0:  # 每30帧清理一次
@@ -160,7 +168,8 @@ class QRCodeDetector:
             
     def run_detection(self):
         """主循环：实时识别并处理结果"""
-        print("启动条形码和二维码识别")
+        #print("启动条形码和二维码识别")
+        logger.info("启动条形码和二维码识别")
         while True:
             self.detection()
         # 释放资源

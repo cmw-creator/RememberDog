@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # 改进的场景匹配器对象
-
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载照片识别")
 import cv2
 import numpy as np
 import os
 import time
-import threading
 import json
+logger.info("照片识别导入完成")
 
 class PhotoDetector:
     def __init__(self, camera_manager, memory_manager):
@@ -43,6 +45,8 @@ class PhotoDetector:
         # 存储识别的编码数据
         with open('assets/photo_info.json', 'r', encoding='utf-8') as f:
             self.photo_db = json.load(f)
+
+        logger.debug(f"成功加载 {len(self.photo_db)} 条照片路径，照片识别模块初始化完成")
         
     def _create_flann_matcher(self):
         """创建FLANN匹配器"""
@@ -62,20 +66,23 @@ class PhotoDetector:
         if not image_files:
             raise ValueError(f"在目录 '{self.reference_folder}' 中未找到任何图片文件")
         
-        print(f"在目录 '{self.reference_folder}' 中找到 {len(image_files)} 个图片文件。开始加载...")
+        #print(f"在目录 '{self.reference_folder}' 中找到 {len(image_files)} 个图片文件。开始加载...")
+        logger.info(f"在目录 '{self.reference_folder}' 中找到 {len(image_files)} 个图片文件。开始加载...")
         
         for img_file in image_files:
             img_path = os.path.join(self.reference_folder, img_file)
             img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
             
             if img is None:
-                print(f"警告：无法加载图像 {img_path}，跳过此文件")
+                #print(f"警告：无法加载图像 {img_path}，跳过此文件")
+                logger.error(f"警告：无法加载图像 {img_path}，跳过此文件")
                 continue
             
             kp, des = self.sift.detectAndCompute(img, None)
             
             if des is None:
-                print(f"警告：无法从图像 {img_file} 中提取特征描述符，跳过此文件")
+                #print(f"警告：无法从图像 {img_file} 中提取特征描述符，跳过此文件")
+                logger.error(f"警告：无法从图像 {img_file} 中提取特征描述符，跳过此文件")
                 continue
             
             self.reference_images.append({
@@ -89,7 +96,8 @@ class PhotoDetector:
         if not self.reference_images:
             raise RuntimeError("没有成功加载任何有效的参考图像")
         
-        print(f"成功加载 {len(self.reference_images)} 张参考图像")
+        #print(f"成功加载 {len(self.reference_images)} 张参考图像")
+        logger.info(f"成功加载 {len(self.reference_images)} 张参考图像")
     
     def _apply_geometric_verification(self, ref_kp, frame_kp, matches, min_inliers=10):
         """

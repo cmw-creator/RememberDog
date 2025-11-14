@@ -5,7 +5,8 @@ import struct
 import time
 import threading
 import logging
-
+logger = logging.getLogger(name='Log')
+logger.info("开始加载控制模块")
 
 class HeartBeat:  # 心跳包
     def __init__(self):

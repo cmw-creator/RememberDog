@@ -6,6 +6,11 @@ import os
 from datetime import datetime
 import multiprocessing
 from memory.qa_manager import QAManager
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载记忆模块")
+
+
 
 class MemoryManager:
     def __init__(self, family_info_path="assets/family_info.json", reminder_path="assets/reminders.json"):

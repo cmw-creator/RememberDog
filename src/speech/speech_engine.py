@@ -3,6 +3,10 @@
 import time
 from multiprocessing import Process, Queue as MPQueue
 from flask import Flask, render_template_string, jsonify
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载语音引擎模块")
+
 
 class SpeechEngine:
     def __init__(self, memory_manager, rate=150, volume=0.9):

@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-import wave
-import requests
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载语音助手")
 import json
 import time
 import threading
 import queue
 import os
 import re
-from multiprocessing import Process, Queue as MPQueue
+#from multiprocessing import Process, Queue as MPQueue
 import dashscope
 from dashscope.audio.asr import VocabularyService, Recognition
 import pyaudio
 import numpy as np
 from scipy.signal import resample_poly
-import pyttsx3
-from pyrnnoise import RNNoise
-from dashscope import Generation
+#import pyttsx3
+#from pyrnnoise import RNNoise
+#from dashscope import Generation
 # ========== 引入阿里云 DashScope SDK ==========
 import dashscope
 from openai import OpenAI
+logger.info("语音助手导入完成")
 
 # API Key 设置
 dashscope.api_key = os.getenv("DASHSCOPE_API_KEY", "sk-f648e9bd318443998ae4df272d479aa0")
@@ -37,7 +39,7 @@ class VoiceAssistant:
         self.chunk = 1024
         self.play_mode = False
         # 音频增强参数
-        self.rnnoise = RNNoise(sample_rate=48000)
+        #self.rnnoise = RNNoise(sample_rate=48000)
         self.agc_enabled = True
         self.noise_gate_threshold = 0.05
         self.agc_target_rms = 0.1
@@ -79,16 +81,19 @@ class VoiceAssistant:
         import pyttsx3
         import time
 
-        print("[TTS进程] 已启动,等待任务...")
+        #print("[TTS进程] 已启动,等待任务...")
+        logger.info("[TTS进程] 已启动,等待任务...")
 
         while True:
             try:
                 text = queue.get()
                 if text is None:
-                    print("[TTS进程] 收到退出信号")
+                    #print("[TTS进程] 收到退出信号")
+                    logger.info("[TTS进程] 收到退出信号")
                     break
 
-                print(f"[TTS进程] 开始播放: {text}")
+                #print(f"[TTS进程] 开始播放: {text}")
+                logger.info(f"[TTS进程] 开始播放: {text}")
 
                 # 每次都创建新引擎
                 engine = pyttsx3.init()
@@ -104,21 +109,26 @@ class VoiceAssistant:
                 # 短暂延迟确保资源释放
                 time.sleep(0.1)
 
-                print(f"[TTS进程] 播放完成")
+                #print(f"[TTS进程] 播放完成")
+                logger.info(f"[TTS进程] 播放完成")
 
             except Exception as e:
-                print(f"[TTS进程] 播放错误: {e}")
+                #print(f"[TTS进程] 播放错误: {e}")
+                logger.error(f"[TTS进程] 播放错误: {e}")
                 import traceback
                 traceback.print_exc()
 
     def speak(self, text):
         """将文本放入队列供 TTS 进程播放"""
-        print(f"[SPEAK] 要朗读: {text}")
+        #print(f"[SPEAK] 要朗读: {text}")
+        logger.info(f"[SPEAK] 要朗读: {text}")
         try:
             self.speech_queue.put(text, timeout=1)
-            print(f"[SPEAK] 已加入队列")
+            #print(f"[SPEAK] 已加入队列")
+            logger.info(f"[SPEAK] 已加入队列")
         except Exception as e:
-            print(f"[SPEAK] 队列错误: {e}")
+            #print(f"[SPEAK] 队列错误: {e}")
+            logger.error(f"[SPEAK] 队列错误: {e}")
 
     def speak_random(self, texts):
         if texts:
@@ -146,7 +156,8 @@ class VoiceAssistant:
                 denoised_frames.append(denoised[0])
             x48_denoised = np.concatenate(denoised_frames).astype(np.int16) if denoised_frames else x48
         except Exception as e:
-            print(f"RNNoise 出错,回退: {e}")
+            #print(f"RNNoise 出错,回退: {e}")
+            logger.error(f"RNNoise 出错,回退: {e}")
             x48_denoised = x48
 
         # 下采样回 16kHz
@@ -186,12 +197,14 @@ class VoiceAssistant:
             self.last_text = ""
 
         def on_open(self):
-            print("Paraformer 回调: on_open")
+            #print("Paraformer 回调: on_open")
+            logger.info("Paraformer 回调: on_open")
 
         def on_event(self, result):
             s = result.get_sentence()
             current_text = s.get("text", "").strip() if s is not None else ""
-            print("get_sentence:",current_text)
+            #print("get_sentence:",current_text)
+            logger.info(f"get_sentence: {current_text}")
 
             if not current_text:
                 return
@@ -220,7 +233,8 @@ class VoiceAssistant:
 
                 # 只处理未处理过的句子
                 for sentence in new_sentences:
-                    print(f"识别到: {sentence}")
+                    #print(f"识别到: {sentence}")
+                    logger.info(f"识别到: {sentence}")
                     self.outer._on_recognized(sentence)
 
                 # 更新已处理句子集合
@@ -231,15 +245,18 @@ class VoiceAssistant:
             # 更新最近识别文本
             self.last_text = current_text
         def on_complete(self):
-            print("Paraformer 回调: on_complete")
+            #print("Paraformer 回调: on_complete")
+            logger.info("Paraformer 回调: on_complete")
             self.last_text = ""
 
         def on_error(self, error):
-            print("Paraformer 回调: on_error:", error)
+            #print("Paraformer 回调: on_error:", error)
+            logger.error(f"Paraformer 回调: on_error: {error}")
             self.last_text = ""
 
         def on_close(self):
-            print("Paraformer 回调: on_close")
+            #print("Paraformer 回调: on_close")
+            logger.info("Paraformer 回调: on_close")
             self.last_text = ""
 
     def _on_recognized(self, text: str):
@@ -333,14 +350,16 @@ class VoiceAssistant:
                          rate=self.rate, input=True,
                          frames_per_buffer=self.chunk,
                          input_device_index=0)
-        print("开始实时识别(Paraformer)")
+        #print("开始实时识别(Paraformer)")
+        logger.info("开始实时识别(Paraformer)")
         while self.running and self.listening:
             # print(self.memory_manager.runSpeaking.value)
             # print(self.memory_manager.runSpeaking.is_set())
             try:
                 raw = stream.read(self.chunk)
             except Exception as e:
-                print("stream read出错:", e)
+                #print("stream read出错:", e)
+                logger.error(f"stream read出错: {e}")
 
             if not self.memory_manager.runSpeaking.is_set():
                 recognition.send_audio_frame(raw) #发送
@@ -358,9 +377,11 @@ class VoiceAssistant:
         # 走问答知识库
         answer, score, audio_path, command = self.qa_manager.query(text, top_k=1, threshold=0.65)
         if command=="No Answer":
-            print(answer)
+            #print(answer)
+            logger.info(answer)
             return
-        print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path},动作：{command}")
+        #print(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path},动作：{command}")
+        logger.info(f"Q&A 匹配分数: {score:.2f}, 初步答案: {answer},音频文件：{audio_path},动作：{command}")
 
         #if score< 75:
         #    return  # 太少的字就忽略调了
@@ -403,7 +424,8 @@ class VoiceAssistant:
 
     def execute_action(self, action, text ,fine_duration):
         """执行对应动作"""
-        print("动作时间：",fine_duration)
+        #print("动作时间：",fine_duration)
+        logger.info(f"文本:{text},动作:{action},动作时间：{fine_duration}")
         if(fine_duration is None):
             fine_duration=0.5
         if action == "add_reminder":

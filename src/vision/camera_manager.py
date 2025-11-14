@@ -3,6 +3,9 @@ import threading
 import time
 from collections import deque
 import os
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("初始化摄像头管理器")
 
 class CameraManager:
     def __init__(self, camera_id="rtsp://192.168.1.120:8554/test", width=800, height=600, save_dir="frames", max_frames=10):
@@ -39,7 +42,8 @@ class CameraManager:
 
     def start(self):
         """启动摄像头捕获线程"""
-        print("启动摄像头")
+        #print("启动摄像头")
+        logger.info("启动摄像头捕获线程")
         if self.running or not self.camera.isOpened():
             return False
         
@@ -61,9 +65,11 @@ class CameraManager:
                     self.current_frame = frame.copy()
                     # 添加到缓存
                     #self.frame_buffer.append(frame.copy())
-                    # 保存到磁盘（可选）
-                    #filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
-                    #cv2.imwrite(filename, frame)
+                    if False:
+                        # 保存到磁盘（可选）
+                        filename = os.path.join(self.save_dir, f"{int(time.time()*1000)}_frame_debug.jpg")
+                        cv2.imwrite(filename, frame)
+                        logger.debug(f"保存调试帧: {filename}")
             time.sleep(0.02)
 
     def get_frame(self):
