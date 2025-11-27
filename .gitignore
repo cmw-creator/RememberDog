@@ -14,3 +14,4 @@ test_raw.wav
 *.log
 #调试帧
 frames/
+.idea/
