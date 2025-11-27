@@ -301,69 +301,74 @@ class VoiceAssistant:
         return None, None
     def run_listen(self):
         """用 Paraformer SDK 做流式识别"""
-        service = VocabularyService()
-        vocabulary_id = None
-
-        # 1. 定义热词数据和目标模型
-        target_model = "paraformer-realtime-v2"
-        my_vocabulary_data = [
-            {"text": "小影", "weight": 5, "lang": "zh"},
-        #    {"text": "前进", "weight": 4, "lang": "zh"},
-        #    {"text": "后退", "weight": 4, "lang": "zh"},
-        #    {"text": "左转", "weight": 4, "lang": "zh"},
-        #    {"text": "右转", "weight": 4, "lang": "zh"},
-        #    {"text": "往前走", "weight": 4, "lang": "zh"},
-        #    {"text": "往后走", "weight": 4, "lang": "zh"},
-            {"text": "趴下", "weight": 4, "lang": "zh"}
-        ]
-
-
-        # vocabulary_id = service.create_vocabulary(
-        #     prefix="command",  # 自定义前缀，用于分类管理
-        #     target_model=target_model,
-        #     vocabulary=my_vocabulary_data
-        # )
-
-        # tmp1 = len(service.list_vocabularies("command"))-1
-        # list1 = service.list_vocabularies("command")
-        vocabulary_id = service.list_vocabularies("command")[0]["vocabulary_id"]
-        # for i in range(0, tmp1):
-        #     service.delete_vocabulary(list1[i]["vocabulary_id"])
-
-
-
-        callback = VoiceAssistant._ASRCallback(self)
-        recognition = Recognition(
-            model="paraformer-realtime-v2",
-            format="pcm",
-            sample_rate=self.rate,
-            callback=callback,
-            language_hints=["zh"],
-            semantic_punctuation_enabled=False,
-            vocabulary_id=vocabulary_id,
-            max_sentence_silence=500
-        )
-        recognition.start()
-
-        pa = pyaudio.PyAudio()
-        stream = pa.open(format=self.format, channels=self.channels,
-                         rate=self.rate, input=True,
-                         frames_per_buffer=self.chunk,
-                         input_device_index=0)
-        #print("开始实时识别(Paraformer)")
-        logger.info("开始实时识别(Paraformer)")
-        while self.running and self.listening:
-            # print(self.memory_manager.runSpeaking.value)
-            # print(self.memory_manager.runSpeaking.is_set())
+        while True:
             try:
-                raw = stream.read(self.chunk)
-            except Exception as e:
-                #print("stream read出错:", e)
-                logger.error(f"stream read出错: {e}")
+                service = VocabularyService()
+                vocabulary_id = None
 
-            if not self.memory_manager.runSpeaking.is_set():
-                recognition.send_audio_frame(raw) #发送
-                # time.sleep(0.1)
+                # 1. 定义热词数据和目标模型
+                target_model = "paraformer-realtime-v2"
+                my_vocabulary_data = [
+                    {"text": "小影", "weight": 5, "lang": "zh"},
+                #    {"text": "前进", "weight": 4, "lang": "zh"},
+                #    {"text": "后退", "weight": 4, "lang": "zh"},
+                #    {"text": "左转", "weight": 4, "lang": "zh"},
+                #    {"text": "右转", "weight": 4, "lang": "zh"},
+                #    {"text": "往前走", "weight": 4, "lang": "zh"},
+                #    {"text": "往后走", "weight": 4, "lang": "zh"},
+                    {"text": "趴下", "weight": 4, "lang": "zh"}
+                ]
+
+
+                # vocabulary_id = service.create_vocabulary(
+                #     prefix="command",  # 自定义前缀，用于分类管理
+                #     target_model=target_model,
+                #     vocabulary=my_vocabulary_data
+                # )
+
+                # tmp1 = len(service.list_vocabularies("command"))-1
+                # list1 = service.list_vocabularies("command")
+                vocabulary_id = service.list_vocabularies("command")[0]["vocabulary_id"]
+                # for i in range(0, tmp1):
+                #     service.delete_vocabulary(list1[i]["vocabulary_id"])
+
+
+
+                callback = VoiceAssistant._ASRCallback(self)
+                recognition = Recognition(
+                    model="paraformer-realtime-v2",
+                    format="pcm",
+                    sample_rate=self.rate,
+                    callback=callback,
+                    language_hints=["zh"],
+                    semantic_punctuation_enabled=False,
+                    vocabulary_id=vocabulary_id,
+                    max_sentence_silence=500
+                )
+                recognition.start()
+
+                pa = pyaudio.PyAudio()
+                stream = pa.open(format=self.format, channels=self.channels,
+                                rate=self.rate, input=True,
+                                frames_per_buffer=self.chunk,
+                                input_device_index=0)
+                #print("开始实时识别(Paraformer)")
+                logger.info("开始实时识别(Paraformer)")
+                while self.running and self.listening:
+                    # print(self.memory_manager.runSpeaking.value)
+                    # print(self.memory_manager.runSpeaking.is_set())
+                    try:
+                        raw = stream.read(self.chunk)
+                    except Exception as e:
+                        #print("stream read出错:", e)
+                        logger.error(f"stream read出错: {e}")
+
+                        
+                    if not self.memory_manager.runSpeaking.is_set():
+                        recognition.send_audio_frame(raw) #发送
+                        # time.sleep(0.1)
+            except Exception as e:
+                logger.error(f"注意语音识别线程出错，尝试重启，错误：{e}，可能是网络连接问题")
 
 
     ### ========== 命令处理 ========== ###

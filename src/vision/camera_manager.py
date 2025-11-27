@@ -57,7 +57,7 @@ class CameraManager:
         """内部方法：持续捕获帧"""
         frame_count = 0
         while self.running:
-            for _ in range(30):
+            for _ in range(2):
                 self.camera.grab()  # 清空缓冲区
             
             ret, frame = self.camera.retrieve()

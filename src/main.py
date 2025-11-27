@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 import utils.logger
-logger_level=logging.DEBUG # 日志级别，DEBUG/INFO/WARNING/ERROR
+logger_level=logging.INFO # 日志级别，DEBUG/INFO/WARNING/ERROR
 utils.logger.get_logger(name='Log', log_level=logger_level)
 logger = logging.getLogger(name='Log')
+logger.setLevel(logger_level)
 logger.debug("\n\n\n")
 logger.debug("=====程序开始运行=====")
 
@@ -96,8 +97,8 @@ if __name__ == '__main__':
     start_time = time.time()
     times=[]
     while True:
-        test_cpu(start_time,times)
+        #test_cpu(start_time,times)
         time.sleep(1)
-        start_time=time.time()
+        #start_time=time.time()
     time.sleep(10000)
     logger.debug("程序超时结束运行")

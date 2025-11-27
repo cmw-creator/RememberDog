@@ -5,7 +5,7 @@
     "audio_file": "assets/voice/face/face_00001.wav"
   },
   "face_00002": {
-    "description": "陌生人",
+    "description": "小影温馨提示，这是陌生人。",
     "update_time": "2025-10-01 17:45:00",
     "audio_file": "assets/voice/face/unknow.wav"
   },
