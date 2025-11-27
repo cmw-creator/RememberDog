@@ -43,6 +43,20 @@
       "command":"play off"
     },
     {
+      "question": "开启跟随模式",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"track on"
+    },
+    {
+      "question": "关闭跟随模式",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"track off"
+    },
+    {
       "question": "小影，往前走。",
       "answer": "好的，前进。",
       "update_time": "2025-10-01 16:35:00",

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import logging
+
+from src.track.person_follow_yolo import PersonFollower
+
 logger = logging.getLogger(name='Log')
 logger.info("开始加载语音助手")
 import json
@@ -29,7 +32,7 @@ from dashscope.audio.asr import Recognition, RecognitionCallback
 # os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
 class VoiceAssistant:
-    def __init__(self, memory_manager ,robot_controller):
+    def __init__(self, memory_manager ,robot_controller, cam_manager):
         self.memory_manager = memory_manager
         self.robot_controller = robot_controller
         # 音频参数(与 Paraformer 兼容)
@@ -68,6 +71,13 @@ class VoiceAssistant:
             api_key=os.getenv("DASHSCOPE_API_KEY", "sk-51a6a596303e466f9054520ec297af09"),
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         )
+        follower = PersonFollower(
+            robot=robot_controller,
+            camera_manager=cam_manager,
+            model_path="yolov8n.pt"  # 确保本地能加载，或让 ultralytics 自动下载
+        )
+        self.follower_thread = threading.Thread(target=follower.run, name="Follower_Thread")
+
 
     def load_commands_db(self):
         """加载本地命令数据库"""
@@ -471,6 +481,14 @@ class VoiceAssistant:
             print("命令：握手")
             self.robot_controller.give_hand()
             return "assets/voice/dog/dog_give_hand.wav"
+        elif action == "track on":
+            print("开启跟随")
+            self.follower_thread.start()
+            return "assets/voice/dog/dog_ok.wav"
+        elif action == "track on":
+            print("关闭跟随(暂时关不掉)")
+
+            return "assets/voice/dog/dog_ok.wav"
         else:
             print(f"警告：无命令: {action}")
 

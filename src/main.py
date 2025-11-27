@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import utils.logger
+from src.track.person_follow_yolo import PersonFollower
+
 logger_level=logging.INFO # 日志级别，DEBUG/INFO/WARNING/ERROR
 utils.logger.get_logger(name='Log', log_level=logger_level)
 logger = logging.getLogger(name='Log')
@@ -66,7 +68,7 @@ def main():
         img_size=(256, 256)
     )
     '''
-    voice_assistant = VoiceAssistant(memory_manager,robot_controller)
+    voice_assistant = VoiceAssistant(memory_manager,robot_controller, cam_manager)
     
 
     # 为每个检测器创建单独的线程

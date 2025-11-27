@@ -15,3 +15,4 @@ test_raw.wav
 #调试帧
 frames/
 .idea/
+src/track/output_frames
