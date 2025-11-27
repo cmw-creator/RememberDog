@@ -13,8 +13,28 @@
       "action": "leave"
     },
     {
+      "pattern": "握个手",
+      "action": "give hand"
+    },
+    {
       "pattern": "转个圈",
       "action": "go round"
+    },
+    {
+      "pattern": "左转",
+      "action": "turn left"
+    },
+    {
+      "pattern": "右转",
+      "action": "turn right"
+    },
+    {
+      "pattern": "前进",
+      "action": "forward"
+    },
+    {
+      "pattern": "后退",
+      "action": "back"
     },
     {
       "pattern": "提醒",

@@ -4,22 +4,25 @@
 import cv2
 import numpy as np
 import os
-from datetime import datetime
 import time
 from pyzbar.pyzbar import decode
 from PIL import Image
-import pyttsx3  # 离线TTS引擎
 import threading
 import json
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载二维码识别")
+
+
 
 class QRCodeDetector:
     def __init__(self, camera_manager, memory_manager):
         # 硬件配置
         self.camera_manager = camera_manager #摄像头
         self.memory_manager = memory_manager  #记忆模块
-        # 语音引擎初始化
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)  # 语速调节
+        # # 语音引擎初始化
+        # self.engine = pyttsx3.init()
+        # self.engine.setProperty('rate', 150)  # 语速调节
         
         # 存储识别的编码数据（药瓶二维码->语音映射）
         with open('assets/qr_code_info.json', 'r', encoding='utf-8') as f:
@@ -110,7 +113,8 @@ class QRCodeDetector:
             self.memory_manager.trigger_event("speak_event", event_payload)
 
         else:
-            print(f"未找到该药品信息，请联系家人更新数据库,{data}")
+            #print(f"未找到该药品信息，请联系家人更新数据库,{data}")
+            logger.error(f"未找到该药品信息，请联系家人更新数据库,{data}")
 
 
     def detection(self):
@@ -118,9 +122,10 @@ class QRCodeDetector:
         if self.frame_count % self.frame_skip != 0:
             time.sleep(0.05)
             return  # 跳过部分帧以降低计算负载
-
+        logger.debug(f"二维码识别一次")
         frame = self.camera_manager.get_frame()
         if frame is None:
+            logger.warning(f"二维码识别，未获取到图片")
             time.sleep(0.1)
             return
         
@@ -135,7 +140,8 @@ class QRCodeDetector:
         for obj in decoded_objects:
             try:
                 data = obj.data.decode('utf-8')
-                print("识别结果：", data)
+                #print("识别结果：", data)
+                logger.info(f"识别结果：{data}")
                 
                 # 检查是否应该处理这个二维码（防重复机制）
                 if self.should_process_qr(data):
@@ -147,22 +153,19 @@ class QRCodeDetector:
                         self.speak("识别到老照片，正在加载回忆...")
                         
             except Exception as e:
-                print(f"处理二维码时出错: {e}")
+                #print(f"处理二维码时出错: {e}")
+                logger.error(f"处理二维码时出错: {e}")
         
         # 清理过期的记录
         if self.frame_count % 60 == 0:  # 每30帧清理一次
             self.cleanup_old_entries()
-            
-        # 显示实时画面（调试用）
-        # cv2.imshow('QR/Barcode Detection', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            return
-            
+        logger.debug(f"图片识别完成一次")
         time.sleep(0.1)  # 减少识别频次
             
     def run_detection(self):
         """主循环：实时识别并处理结果"""
-        print("启动条形码和二维码识别")
+        #print("启动条形码和二维码识别")
+        logger.info("启动条形码和二维码识别")
         while True:
             self.detection()
         # 释放资源
@@ -176,22 +179,28 @@ if __name__ == '__main__':
     print("二维码识别测试")
     import sys
     import os
+    import time
+    start_time = time.time()
     
     # 添加项目根目录到Python路径
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(current_dir)
     sys.path.append(project_root)
-    
     from memory.memory_manager import MemoryManager
+    print("[time]",time.time()-start_time)
     from vision.camera_manager import CameraManager
+    print("[time]",time.time()-start_time)
     from speech.speech_engine import SpeechEngine
-
+    print("[time]",time.time()-start_time)
     
     memory_manager = MemoryManager()
     speech_engine = SpeechEngine(memory_manager)
-    cam_manager = CameraManager()
+    cam_manager = CameraManager(0)
     cam_manager.start()
+    print("[time]",time.time()-start_time)
     time.sleep(0.5)
     
     qr_code_detector = QRCodeDetector(cam_manager, memory_manager)
+    print("[time]",time.time()-start_time)
     qr_code_detector.run_detection()
+    print("[time]",time.time()-start_time)

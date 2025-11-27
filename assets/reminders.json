@@ -13,7 +13,7 @@
     {
       "time": "16:40",
       "event": "提醒测试",
-      "completed": false
+      "completed": true
     },
     {
       "time": "05:00",
@@ -23,7 +23,7 @@
     {
       "time": "17:00",
       "event": "去睡觉",
-      "completed": false
+      "completed": true
     }
   ]
 }

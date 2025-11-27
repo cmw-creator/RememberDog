@@ -1,9 +1,14 @@
 #控制从json中加载问答数据并向量化，包含检索功能
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("开始加载问答管理模块")
 import json
 import os
 import faiss
-import numpy as np
+#import numpy as np
 from sentence_transformers import SentenceTransformer
+logger.info("问答管理模块导入完成")
+
 
 class QAManager:
     def __init__(self, data_path="assets/family_info.json", model_name="./assets/paraphrase-multilingual-MiniLM-L12-v2"):
@@ -45,6 +50,7 @@ class QAManager:
         embeddings = self.model.encode(self.questions, convert_to_numpy=True, normalize_embeddings=True)
         self.index = faiss.IndexFlatIP(self.dimension)  # 内积相似度（余弦）
         self.index.add(embeddings)
+        print("向量索引已构建")
 
     def add_qa(self, question, answer):
         """新增Q&A并更新索引"""
@@ -70,4 +76,5 @@ class QAManager:
         if best_score >= threshold:
             return self.answers[best_idx], float(best_score),best_audio_file,best_command
         else:
-            return "我暂时不知道怎么回答", float(best_score)
+            return "我暂时不知道怎么回答", float(best_score), None, "No Answer"
+            # return "原神！启动！", float(best_score), None, None

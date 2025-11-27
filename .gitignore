@@ -11,3 +11,6 @@ test_enhanced.wav
 test_raw.wav
 #压缩包
 *.zip
+*.log
+#调试帧
+frames/

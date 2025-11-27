@@ -4,86 +4,136 @@
       "question": "你好，小影。",
       "answer": "你好呀，我是小影。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/hello.wav",
-      "comand":"stand up"
+      "audio_file": "assets/voice/dog/dog_start.wav",
+      "command":"hello"
     },
     {
-      "question": "小影，过来一下。",
-      "answer": "我这就来！",
+      "question": "小影,趴下。",
+      "answer": "好的",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand":"come"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"lie down"
     },
     {
-      "question": "转个圈吧。",
+      "question": "下面展示照片识别",
+      "answer": "这是您参加社区书法比赛获得一等奖的作品和照片。您的楷书写得工整有力，评委们都说很有颜真卿的风骨。您从六十岁开始学习书法，每天坚持练习两个小时，这份坚持和毅力真是令人敬佩。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/photo/photo_00001.wav",
+      "command":"photo"
+    },
+    {
+      "question": "小影,站起来。",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"stand up"
+    },
+    {
+      "question": "开启演示模式",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"play on"
+    },
+    {
+      "question": "关闭演示模式",
+      "answer": "好的",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"play off"
+    },
+    {
+      "question": "小影，往前走。",
+      "answer": "好的，前进。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"forward"
+    },
+    {
+      "question": "小影，往后走。",
+      "answer": "好的，后退。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"back"
+    },
+    {
+      "question": "小影，左转。",
+      "answer": "好的，左转。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"turn left"
+    },
+    {
+      "question": "小影，右转。",
+      "answer": "好的，右转。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"turn right"
+    },
+    {
+      "question": "小影，握一下手。",
       "answer": "好的。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand":"go round"
+      "audio_file": "assets/voice/dog/dog_give_hand.wav",
+      "command":"give hand"
+    },
+    {
+      "question": "小影，转个圈吧。",
+      "answer": "好的。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"go round"
     },
     {
       "question": "小影，到别的地方去。",
       "answer": "好的，我走啦，有事叫我。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand":"leave"
+      "audio_file": "assets/voice/dog/dog_ok.wav",
+      "command":"leave"
     },
     {
       "question": "小影，我记不清我女儿家了，她家在哪？",
       "answer": "您女儿家在南京市玄武区南京理工大学竹园小区一栋二楼，需要我帮你带路吗？",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "navigate"
+      "audio_file": "assets/voice/dog/qa_00001.wav",
+      "command": "navigate"
     },
     {
       "question": "我是不是有个孙女，他今年多大了？",
       "answer": "您的孙女是小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "info"
+      "audio_file": "assets/voice/dog/qa_00002.wav",
+      "command": "info"
     },
     {
       "question": "我想给我女儿打个电话",
       "answer": "正在为您搜索，您女儿的电话是13627931054。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "call"
-    },
-    {
-      "question": "小影，我记不清我女儿家了，她家在哪？",
-      "answer": "您女儿家在南京市玄武区南京理工大学竹园小区一栋二楼，需要我帮你带路吗？",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "navigate"
-    },
-    {
-      "question": "我是不是有个孙女，他今年多大了？",
-      "answer": "您的孙女是小红，她今年6岁，上幼儿园大班，最喜欢听你讲故事。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "info"
-    },
-    {
-      "question": "我想给我女儿打个电话",
-      "answer": "正在为您搜索，您女儿的电话是13627931054。",
-      "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "call"
+      "audio_file": "assets/voice/dog/qa_00003.wav",
+      "command": "call"
     },
     {
       "question": "我想听我女儿的声音",
       "answer": "爷爷，最近身体怎么样，腰还疼吗？我有时间就来看您。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "play_daughter_voice",
+      "audio_file": "assets/voice/people/woman.wav",
+      "command": "play_daughter_voice",
       "voice_model": "woman1"
     },
     {
       "question": "我想听我儿子的声音",
       "answer": "爷爷，您最近身体怎么样呀？天气时冷时热的，您可得多注意，及时添减衣服。我这边一切都好，工作生活都挺顺利的，就是特别想您。您有空就给我打个电话。",
       "update_time": "2025-10-01 16:35:00",
-      "audio_file": "assets/voice/dog/go.wav",
-      "comand": "play_son_voice",
+      "audio_file": "assets/voice/people/man.wav",
+      "command": "play_son_voice",
+      "voice_model": "male_su"
+    },
+    {
+      "question": "下面演示吃药提醒。",
+      "answer": "小影温馨提示：下午五点钟该吃降血糖药啦。",
+      "update_time": "2025-10-01 16:35:00",
+      "audio_file": "assets/voice/dog/eat_medicine.wav",
+      "command": "play_son_voice",
       "voice_model": "male_su"
     }
   ]

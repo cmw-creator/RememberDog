@@ -3,9 +3,12 @@ import threading
 import time
 from collections import deque
 import os
+import logging
+logger = logging.getLogger(name='Log')
+logger.info("初始化摄像头管理器")
 
 class CameraManager:
-    def __init__(self, camera_id="rtsp://192.168.1.120:8554/test", width=800, height=600, save_dir="frames", max_frames=100):
+    def __init__(self, camera_id="rtsp://192.168.1.120:8554/test", width=800, height=600, save_dir="frames", max_frames=10):
         """初始化摄像头管理器
         
         Args:
@@ -39,7 +42,8 @@ class CameraManager:
 
     def start(self):
         """启动摄像头捕获线程"""
-        print("启动摄像头")
+        #print("启动摄像头")
+        logger.info("启动摄像头捕获线程")
         if self.running or not self.camera.isOpened():
             return False
         
@@ -51,20 +55,28 @@ class CameraManager:
 
     def _capture_frames(self):
         """内部方法：持续捕获帧"""
+        frame_count = 0
         while self.running:
-            for _ in range(1):
+            for _ in range(2):
                 self.camera.grab()  # 清空缓冲区
             
             ret, frame = self.camera.retrieve()
             if ret:
                 with self.frame_lock:
+                    frame_count += 1
                     self.current_frame = frame.copy()
                     # 添加到缓存
-                    self.frame_buffer.append(frame.copy())
-                    # 保存到磁盘（可选）
-                    #filename = os.path.join(self.save_dir, f"frame_{int(time.time()*1000)}.jpg")
-                    #cv2.imwrite(filename, frame)
-            time.sleep(0.1)
+                    #self.frame_buffer.append(frame.copy())
+                    if False:
+                        # 保存到磁盘（可选）
+                        filename = os.path.join(self.save_dir, f"{int(time.time()*1000)}_frame_debug.jpg")
+                        cv2.imwrite(filename, frame)
+                        logger.debug(f"保存调试帧: {filename}")
+            else:
+                logger.warning(f"未获取到有效帧，跳过")
+            if frame_count % 10 == 0:
+                logger.debug(f"已获取 {frame_count} 帧")
+            time.sleep(0.02)
 
     def get_frame(self):
         """获取当前帧的副本"""
@@ -98,7 +110,7 @@ class CameraManager:
 
 if __name__ == "__main__":
     print("摄像头测试")
-    camera_manager = CameraManager()
+    camera_manager = CameraManager(0)
     camera_manager.start()
     try:
         while True:
