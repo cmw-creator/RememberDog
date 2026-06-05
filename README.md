@@ -2,7 +2,11 @@
 
 AD Companion Robot Dog with RAG Memory + SLAM Navigation + LLM Dialogue
 
-> **基于绝影Lite3机器狗的阿尔茨海默症陪伴机器人** | ICPC亚洲铜牌得主 + AI算法全国第2名
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![ROS](https://img.shields.io/badge/ROS-Noetic-blue)
+
+> **基于绝影Lite3机器狗的阿尔茨海默症陪伴机器人** | 智慧社区国赛一等奖 | ICAN创新创业大赛三等奖
 
 ## 🎯 项目概述
 
@@ -65,5 +69,6 @@ src/
 ```
 
 ## 📧 联系
-王承孟 | 972660369@qq.com | [GitHub](https://github.com/cmw-creator)
+王承孟 | wcm@njust.edu.cn | [GitHub](https://github.com/cmw-creator)
+
 
