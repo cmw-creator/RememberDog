@@ -23,22 +23,24 @@ AD Companion Robot Dog with RAG Memory + SLAM Navigation + LLM Dialogue
 ## 🧠 技术架构
 
 ```mermaid
-┌─────────────────────────────────────────────────┐
-│                   用户交互层                       │
-│  Flutter App (WebRTC)  ←→ 语音输入/输出          │
-└──────────────────────┬──────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────┐
-│                   决策层                          │
-│  大语言模型（LLM）←→ Sentence-BERT 记忆库(RAG)   │
-│  GPT-SoVITS 语音合成(TTS)                        │
-└──────────────────────┬──────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────┐
-│                   感知+运动层                      │
-│  ORB-SLAM3定位导航  ←→  自适应跟随                 │
-│  SFace人脸识别  +  pyzbar二维码识别                │
-└─────────────────────────────────────────────────┘
+graph TD
+    subgraph User["用户交互层"]
+        App["Flutter App (WebRTC)"] <--> Voice["语音输入/输出"]
+    end
+
+    subgraph Decision["决策层"]
+        LLM["大语言模型 (LLM)"] <--> RAG["Sentence-BERT 记忆库"]
+        TTS["GPT-SoVITS 语音合成"]
+    end
+
+    subgraph Perception["感知+运动层"]
+        SLAM["ORB-SLAM3 定位导航"] <--> Follow["自适应跟随"]
+        Face["SFace 人脸识别"]
+        QR["pyzbar 二维码识别"]
+    end
+
+    Voice --> LLM
+    LLM --> SLAM
 ```
 
 ## 🛠️ 核心功能
