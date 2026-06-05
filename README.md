@@ -17,6 +17,10 @@ AD Companion Robot Dog with RAG Memory + SLAM Navigation + LLM Dialogue
 - 🚶 **自主导航** — ORB-SLAM3室内定位与自适应跟随
 - 📱 **远程控制** — Flutter App（WebRTC实时图传）
 
+## 🔬 研究关联
+
+本项目实践了具身智能的核心技术栈——多模态感知（视觉+语音）、RAG记忆检索、LLM驱动的自主决策、SLAM环境建图。这些能力是VLA（Vision-Language-Action）模型在真实机器人上部署的必要支撑。项目中对多传感器融合、实时语音交互、动态环境导航的工程实践，与VLA研究中"视觉感知→语言理解→动作执行"的闭环高度对应。
+
 ## 🏆 获奖
 - ICAN创新创业大赛 全国三等奖
 
@@ -56,7 +60,11 @@ graph TD
 
 ## 🚀 快速开始
 
-参见 [安装文档](docs/setup.md)
+```bash
+pip install -r requirements.txt
+# 连接机器狗硬件后运行
+python src/main.py
+```
 
 ## 📂 项目结构
 
