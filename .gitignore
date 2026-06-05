@@ -16,3 +16,5 @@ test_raw.wav
 frames/
 .idea/
 src/track/output_frames
+# 备份文件
+*.orig
